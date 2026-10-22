@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Disapěnto Переводчик</title>
-  <link rel="icon" href="ico.png" type="image/x-icon">
   <style>
     :root {
       --g-blue: #1a73e8;
@@ -131,7 +130,6 @@
     .swap-btn:hover { background: #f1f3f4; color: var(--g-text); }
     .swap-btn:active { transform: rotate(180deg); }
 
-    /* minmax(0, 1fr) не даёт длинным словам растягивать колонки грида */
     .panes {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -164,7 +162,6 @@
       min-width: 0;
     }
 
-    /* Авто-расширяющееся поле без внутреннего скроллбара + жёсткий перенос сверхдлинных слов */
     textarea {
       width: 100%;
       min-width: 0;
@@ -387,7 +384,7 @@
   <div class="brand">
     <div class="brand-icon">D</div>
     <span><strong>Disapěnto</strong> Переводчик</span>
-    <span class="brand-badge">Virkinori v2.3</span>
+    <span class="brand-badge" id="dict-counter">Virkinori v3.0 • Полный словарь</span>
   </div>
 </header>
 
@@ -469,7 +466,7 @@
       </div>
       <div class="rules-list">
         <div><strong>1. Прил.:</strong> Сущ + <code>-o / -to</code> (jogěnt → jogěnto)</div>
-        <div><strong>2. Глагол:</strong> Сущ + <code>-ə / -rə</code> (piet → pietə)</div>
+        <div><strong>2. Глагол:</strong> Сущ + <code>-ə / -rə</code> (на <code>-ě</code> → <code>-rə</code>: kaě → karə)</div>
         <div><strong>3. Мн. число:</strong> Слово + <code>-ri / -ori</code> (əsiəs → əsiəsori)</div>
         <div><strong>4–5. Степени:</strong> <code>měr</code> (лучше) / <code>gor</code> (лучший)</div>
         <div><strong>6–7. Отглаг.:</strong> <code>-r / -ar</code> (niěngar) + <code>-o</code> (niěngaro)</div>
@@ -479,8 +476,8 @@
         <div><strong>11–12. Время:</strong> <code>əho</code> (прош./было), <code>fuoi</code> (буд./будет)</div>
         <div><strong>16 & 20. Отриц.:</strong> <code>nə</code> (не), <code>ən-</code> (приставка: ənfiət)</div>
         <div><strong>18–19. Суффиксы:</strong> <code>-an</code> (деятель), <code>-ši / -aši</code> (уменьш.)</div>
-        <div><strong>22. Сов. вид:</strong> Глагол + <code>-m</code> (əho dakarəm — пришёл)</div>
-        <div><strong>Идиома:</strong> <code>Plevero kimiem!</code> — Удачи! (Good luck)</div>
+        <div><strong>22. Сов. вид:</strong> <code>fuoi tossorə</code> (буду говорить) vs <code>fuoi tossorəm</code> (скажу)</div>
+        <div><strong>Идиомы:</strong> <code>prə rakeě</code> (вчера), <code>afər rakeě</code> (завтра), <code>nuol'ato namiri</code> (ватные ноги)</div>
       </div>
     </div>
   </div>
@@ -489,7 +486,7 @@
 <script>
 /**
  * ============================================================================
- * 0. НОРМАЛИЗАЦИЯ БУКВЫ ШВА (Латинская ə/Ə, перевёрнутая ǝ/Ǝ, кириллическая ә/Ә)
+ * 0. НОРМАЛИЗАЦИЯ БУКВЫ ШВА И РЕГИСТРА
  * ============================================================================
  */
 function normalizeSchwa(str) {
@@ -519,11 +516,11 @@ function endsWithDisVowel(str) {
 
 /**
  * ============================================================================
- * 1. ПОЛНАЯ БАЗА МЕСТОИМЕНИЙ, КОРНЕЙ И ЛЕКСИКИ DISAPĚNTO
+ * 1. ПОЛНАЯ БАЗА МЕСТОИМЕНИЙ, ГЛАГОЛОВ И КОРНЕЙ DISAPĚNTO (v3.0)
  * ============================================================================
  */
 const ROOTS = {
-  // Местоимения
+  // --- МЕСТОИМЕНИЯ ---
   "mi": {
     ru: "я", pos: "PRON", person: 1, plural: false, gender: "m",
     cases: { nom: "я", acc: "меня", gen: "меня", dat: "мне", prep: "мне", inst: "мной", poss: "мой" }
@@ -556,15 +553,44 @@ const ROOTS = {
     ru: "они", pos: "PRON", person: 3, plural: true,
     cases: { nom: "они", acc: "их", gen: "их", dat: "им", prep: "них", inst: "ими", poss: "их" }
   },
-  "kea":   { ru: "кто", pos: "PRON", person: 3, cases: { nom: "кто", acc: "кого", gen: "кого" } },
+  "kea":   { ru: "кто", pos: "PRON", person: 3, cases: { nom: "кто", acc: "кого", gen: "кого", dat: "кому", inst: "кем" } },
+  "bokea": { ru: "кто-то", pos: "PRON", person: 3, cases: { nom: "кто-то", acc: "кого-то", gen: "кого-то" } },
   "nea":   { ru: "никто", pos: "PRON_NEG", person: 3, cases: { nom: "никто", acc: "никого", gen: "никого" } },
   "nəkea": { ru: "никто", pos: "PRON_NEG", person: 3, cases: { nom: "никто", acc: "никого", gen: "никого" } },
   "nəči":  { ru: "ничто", pos: "PRON_NEG", person: 3, cases: { nom: "ничто", acc: "ничего", gen: "ничего" } },
-  "oto":   { ru: "все", pos: "PRON", person: 3, plural: true, adjRu: "весь", cases: { nom: "все", acc: "всех", gen: "всех" } },
-  "əh":    { ru: "это", pos: "PRON_DEM", person: 3, cases: { nom: "это", acc: "это", gen: "этого", prep: "этом", inst: "этим" } },
-  "əpho":  { ru: "тот", pos: "PRON_DEM", person: 3, cases: { nom: "тот", acc: "того", gen: "того", prep: "том", inst: "тем" } },
+  "oto":   { ru: "все", pos: "PRON", person: 3, plural: true, adjRu: "весь", cases: { nom: "все", acc: "всех", gen: "всех", dat: "всем" } },
+  "ivək":  { ru: "каждый", pos: "PRON", person: 3, adjRu: "каждый", cases: { nom: "каждый", acc: "каждого", gen: "каждого", dat: "каждому" } },
+  "kent":  { ru: "какой", pos: "ROOT", adjRu: "какой" },
+  "silfi": { ru: "такой же", pos: "ADJ", adjRu: "такой же" },
+  "əh":    { ru: "это", pos: "PRON_DEM", person: 3, cases: { nom: "это", acc: "это", gen: "этого", dat: "этому", prep: "этом", inst: "этим" } },
+  "əht":   { ru: "то", pos: "PRON_DEM", person: 3, cases: { nom: "то", acc: "то", gen: "того", dat: "тому", prep: "том", inst: "тем" } },
+  "əpho":  { ru: "тот", pos: "PRON_DEM", person: 3, cases: { nom: "тот", acc: "того", gen: "того", dat: "тому", prep: "том", inst: "тем" } },
 
-  // Глагольно-именные корни
+  // --- ГЛАГОЛЬНО-ИМЕННЫЕ КОРНИ С ПОЛНЫМИ ПАРАДИГМАМИ ВИДОВ ---
+  "tosso": {
+    ru: "речь", pos: "NOUN", gender: "f",
+    verbImpf: "говорить", verbPerf: "сказать",
+    cases: { nom: "речь", acc: "речь", gen: "речи", prep: "речи", inst: "речью", pl: "речи" },
+    verbForms: {
+      pres: { 1: "говорю", 2: "говоришь", 3: "говорит", 11: "говорим", 12: "говорите", 13: "говорят" },
+      pastImpf: { m: "говорил", f: "говорила", n: "говорило", pl: "говорили" },
+      pastPerf: { m: "сказал", f: "сказала", n: "сказало", pl: "сказали" },
+      futPerf:  { 1: "скажу", 2: "скажешь", 3: "скажет", 11: "скажем", 12: "скажете", 13: "скажут" },
+      imp: "говори"
+    }
+  },
+  "daka": {
+    ru: "ходьба", pos: "NOUN", gender: "f",
+    verbImpf: "ходить", verbPerf: "прийти",
+    verbForms: {
+      pres: { 1: "иду", 2: "идёшь", 3: "идёт", 11: "идём", 12: "идёте", 13: "идут" },
+      pastImpf: { m: "шёл", f: "шла", n: "шло", pl: "шли" },
+      pastPerf: { m: "пришёл", f: "пришла", n: "пришло", pl: "пришли" },
+      futImpf:  { 1: "буду идти", 2: "будешь идти", 3: "будет идти", 11: "будем идти", 12: "будете идти", 13: "будут идти" },
+      futPerf:  { 1: "приду", 2: "придёшь", 3: "придёт", 11: "придём", 12: "придёте", 13: "придут" },
+      imp: "иди"
+    }
+  },
   "piet": {
     ru: "любовь", pos: "NOUN", gender: "f",
     verbImpf: "любить", verbPerf: "полюбить", adjRu: "любовный",
@@ -573,29 +599,8 @@ const ROOTS = {
       pres: { 1: "люблю", 2: "любишь", 3: "любит", 11: "любим", 12: "любите", 13: "любят" },
       pastImpf: { m: "любил", f: "любила", n: "любило", pl: "любили" },
       pastPerf: { m: "полюбил", f: "полюбила", n: "полюбило", pl: "полюбили" },
-      futPerf:  { 1: "полюблю", 2: "полюбишь", 3: "полюбит", 11: "полюбим", 12: "полюбите", 13: "полюбят" }
-    }
-  },
-  "daka": {
-    ru: "ходьба", pos: "ROOT",
-    verbImpf: "ходить", verbPerf: "прийти",
-    verbForms: {
-      pres: { 1: "иду", 2: "идёшь", 3: "идёт", 11: "идём", 12: "идёте", 13: "идут" },
-      pastImpf: { m: "шёл", f: "шла", n: "шло", pl: "шли" },
-      pastPerf: { m: "пришёл", f: "пришла", n: "пришло", pl: "пришли" },
-      futImpf:  { 1: "буду идти", 2: "будешь идти", 3: "будет идти", 11: "будем идти", 12: "будете идти", 13: "будут идти" },
-      futPerf:  { 1: "приду", 2: "придёшь", 3: "придёт", 11: "придём", 12: "придёте", 13: "придут" }
-    }
-  },
-  "tosso": {
-    ru: "речь", pos: "ROOT",
-    verbImpf: "говорить", verbPerf: "сказать",
-    verbForms: {
-      pres: { 1: "говорю", 2: "говоришь", 3: "говорит", 11: "говорим", 12: "говорите", 13: "говорят" },
-      pastImpf: { m: "говорил", f: "говорила", n: "говорило", pl: "говорили" },
-      pastPerf: { m: "сказал", f: "сказала", n: "сказало", pl: "сказали" },
-      futImpf:  { 1: "скажу", 2: "скажешь", 3: "скажет", 11: "скажем", 12: "скажете", 13: "скажут" },
-      futPerf:  { 1: "скажу", 2: "скажешь", 3: "скажет", 11: "скажем", 12: "скажете", 13: "скажут" }
+      futPerf:  { 1: "полюблю", 2: "полюбишь", 3: "полюбит", 11: "полюбим", 12: "полюбите", 13: "полюбят" },
+      imp: "люби"
     }
   },
   "galifa": {
@@ -619,8 +624,9 @@ const ROOTS = {
     }
   },
   "mikas": {
-    ru: "мысль", pos: "ROOT",
+    ru: "мысль", pos: "NOUN", gender: "f",
     verbImpf: "думать", verbPerf: "подумать",
+    cases: { nom: "мысль", acc: "мысль", gen: "мысли", prep: "мысли", inst: "мыслью", pl: "мысли" },
     verbForms: {
       pres: { 1: "думаю", 2: "думаешь", 3: "думает", 11: "думаем", 12: "думаете", 13: "думают" },
       pastImpf: { m: "думал", f: "думала", pl: "думали" },
@@ -629,14 +635,14 @@ const ROOTS = {
     }
   },
   "ukim": {
-    ru: "ответ", pos: "ROOT",
+    ru: "ответ", pos: "NOUN",
     verbImpf: "отвечать", verbPerf: "ответить",
     verbForms: {
       pres: { 1: "отвечаю", 2: "отвечаешь", 3: "отвечает", 11: "отвечаем", 12: "отвечаете", 13: "отвечают" },
       pastImpf: { m: "отвечал", f: "отвечала", pl: "отвечали" },
       pastPerf: { m: "ответил", f: "ответила", pl: "ответили" },
-      futImpf:  { 1: "отвечу", 2: "ответишь", 3: "ответит", 11: "ответим", 12: "ответите", 13: "ответят" },
-      futPerf:  { 1: "отвечу", 2: "ответишь", 3: "ответит", 11: "ответим", 12: "ответите", 13: "ответят" }
+      futPerf:  { 1: "отвечу", 2: "ответишь", 3: "ответит", 11: "ответим", 12: "ответите", 13: "ответят" },
+      imp: "ответь"
     }
   },
   "isso": {
@@ -645,115 +651,936 @@ const ROOTS = {
     verbForms: {
       pres: { 1: "имею", 2: "имеешь", 3: "имеет", 11: "имеем", 12: "имеете", 13: "имеют" },
       pastImpf: { m: "имел", f: "имела", pl: "имели" },
-      pastPerf: { m: "получил", f: "получила", pl: "получили" }
+      pastPerf: { m: "получил", f: "получила", pl: "получили" },
+      futPerf:  { 1: "получу", 2: "получишь", 3: "получит", 11: "получим", 12: "получите", 13: "получат" }
     }
   },
   "mork": {
     ru: "убийство", pos: "NOUN", agentRu: "убийца",
     verbImpf: "убивать", verbPerf: "убить",
     verbForms: {
-      pres: { 1: "убиваю", 2: "убиваешь", 3: "убивает", 13: "убивают" },
+      pres: { 1: "убиваю", 2: "убиваешь", 3: "убивает", 11: "убиваем", 12: "убиваете", 13: "убивают" },
       pastImpf: { m: "убивал", f: "убивала", pl: "убивали" },
       pastPerf: { m: "убил", f: "убила", pl: "убили" },
-      futPerf:  { 1: "убью", 2: "убьёшь", 3: "убьёт", 13: "убьют" },
+      futPerf:  { 1: "убью", 2: "убьёшь", 3: "убьёт", 11: "убьём", 12: "убьёте", 13: "убьют" },
       imp: "убей"
     }
   },
+  "saff": {
+    ru: "событие", pos: "NOUN",
+    verbImpf: "происходить", verbPerf: "произойти",
+    verbForms: {
+      pres: { 1: "происхожу", 2: "происходишь", 3: "происходит", 13: "происходят" },
+      pastImpf: { m: "происходил", f: "происходила", n: "происходило", pl: "происходили" },
+      pastPerf: { m: "произошёл", f: "произошла", n: "произошло", pl: "произошли" },
+      futPerf:  { 3: "произойдёт", 13: "произойдут" }
+    }
+  },
+  "təkuda": {
+    ru: "жарка", pos: "ROOT",
+    verbImpf: "жарить", verbPerf: "пожарить",
+    verbForms: {
+      pres: { 1: "жарю", 2: "жаришь", 3: "жарит", 11: "жарим", 12: "жарите", 13: "жарят" },
+      pastImpf: { m: "жарил", f: "жарила", pl: "жарили" },
+      pastPerf: { m: "пожарил", f: "пожарила", pl: "пожарили" },
+      futPerf:  { 1: "пожарю", 2: "пожаришь", 3: "пожарит", 11: "пожарим", 13: "пожарят" }
+    }
+  },
+  "əli": {
+    ru: "стояние", pos: "ROOT",
+    verbImpf: "стоять", verbPerf: "встать",
+    verbForms: {
+      pres: { 1: "стою", 2: "стоишь", 3: "стоит", 11: "стоим", 12: "стоите", 13: "стоят" },
+      pastImpf: { m: "стоял", f: "стояла", pl: "стояли" },
+      pastPerf: { m: "встал", f: "встала", pl: "встали" },
+      futPerf:  { 1: "встану", 2: "встанешь", 3: "встанет", 11: "встанем", 13: "встанут" }
+    }
+  },
+  "dəgi": {
+    ru: "удержание", pos: "ROOT",
+    verbImpf: "держать", verbPerf: "удержать",
+    verbForms: {
+      pres: { 1: "держу", 2: "держишь", 3: "держит", 11: "держим", 12: "держите", 13: "держат" },
+      pastImpf: { m: "держал", f: "держала", pl: "держали" },
+      pastPerf: { m: "удержал", f: "удержала", pl: "удержали" },
+      futPerf:  { 1: "удержу", 2: "удержишь", 3: "удержит", 11: "удержим", 13: "удержат" },
+      imp: "держи"
+    }
+  },
+  "paem": {
+    ru: "понимание", pos: "ROOT",
+    verbImpf: "понимать", verbPerf: "понять",
+    verbForms: {
+      pres: { 1: "понимаю", 2: "понимаешь", 3: "понимает", 11: "понимаем", 12: "понимаете", 13: "понимают" },
+      pastImpf: { m: "понимал", f: "понимала", pl: "понимали" },
+      pastPerf: { m: "понял", f: "поняла", pl: "поняли" },
+      futPerf:  { 1: "пойму", 2: "поймёшь", 3: "поймёт", 11: "поймём", 12: "поймёте", 13: "поймут" },
+      imp: "пойми"
+    }
+  },
+  "ašin": {
+    ru: "дача", pos: "ROOT",
+    verbImpf: "давать", verbPerf: "дать",
+    verbForms: {
+      pres: { 1: "даю", 2: "даёшь", 3: "даёт", 11: "даём", 12: "даёте", 13: "дают" },
+      pastImpf: { m: "давал", f: "давала", pl: "давали" },
+      pastPerf: { m: "дал", f: "дала", pl: "дали" },
+      futPerf:  { 1: "дам", 2: "дашь", 3: "даст", 11: "дадим", 12: "дадите", 13: "дадут" },
+      imp: "дай"
+    }
+  },
+  "děka": {
+    ru: "получение", pos: "ROOT",
+    verbImpf: "получать", verbPerf: "получить",
+    verbForms: {
+      pres: { 1: "получаю", 2: "получаешь", 3: "получает", 11: "получаем", 12: "получаете", 13: "получают" },
+      pastImpf: { m: "получал", f: "получала", pl: "получали" },
+      pastPerf: { m: "получил", f: "получила", pl: "получили" },
+      futPerf:  { 1: "получу", 2: "получишь", 3: "получит", 11: "получим", 12: "получите", 13: "получат" }
+    }
+  },
+  "makviat": {
+    ru: "созидание", pos: "ROOT",
+    verbImpf: "создавать", verbPerf: "создать",
+    verbForms: {
+      pres: { 1: "создаю", 2: "создаёшь", 3: "создаёт", 11: "создаём", 12: "создаёте", 13: "создают" },
+      pastImpf: { m: "создавал", f: "создавала", pl: "создавали" },
+      pastPerf: { m: "создал", f: "создала", pl: "создали" },
+      futPerf:  { 1: "создам", 2: "создашь", 3: "создаст", 11: "создадим", 12: "создадите", 13: "создадут" },
+      imp: "создай"
+    }
+  },
+  "makita": {
+    ru: "превращение", pos: "ROOT",
+    verbImpf: "превращать", verbPerf: "превратить",
+    verbForms: {
+      pres: { 1: "превращаю", 2: "превращаешь", 3: "превращает", 11: "превращаем", 13: "превращают" },
+      pastImpf: { m: "превращал", f: "превращала", pl: "превращали" },
+      pastPerf: { m: "превратил", f: "превратила", pl: "превратили" },
+      futPerf:  { 1: "превращу", 2: "превратишь", 3: "превратит", 11: "превратим", 13: "превратят" }
+    }
+  },
+  "nəzgi": {
+    ru: "сидение", pos: "ROOT",
+    verbImpf: "сидеть", verbPerf: "сесть",
+    verbForms: {
+      pres: { 1: "сижу", 2: "сидишь", 3: "сидит", 11: "сидим", 12: "сидите", 13: "сидят" },
+      pastImpf: { m: "сидел", f: "сидела", pl: "сидели" },
+      pastPerf: { m: "сел", f: "села", pl: "сели" },
+      futPerf:  { 1: "сяду", 2: "сядешь", 3: "сядет", 11: "сядем", 13: "сядут" },
+      imp: "сядь"
+    }
+  },
+  "tanza": {
+    ru: "ныряние", pos: "ROOT",
+    verbImpf: "нырять", verbPerf: "нырнуть",
+    verbForms: {
+      pres: { 1: "ныряю", 2: "ныряешь", 3: "ныряет", 11: "ныряем", 13: "ныряют" },
+      pastImpf: { m: "нырял", f: "ныряла", pl: "ныряли" },
+      pastPerf: { m: "нырнул", f: "нырнула", pl: "нырнули" },
+      futPerf:  { 1: "нырну", 2: "нырнёшь", 3: "нырнёт", 11: "нырнём", 13: "нырнут" }
+    }
+  },
+  "kip": {
+    ru: "взятие", pos: "ROOT",
+    verbImpf: "брать", verbPerf: "взять",
+    verbForms: {
+      pres: { 1: "беру", 2: "берёшь", 3: "берёт", 11: "берём", 12: "берёте", 13: "берут" },
+      pastImpf: { m: "брал", f: "брала", pl: "брали" },
+      pastPerf: { m: "взял", f: "взяла", pl: "взяли" },
+      futPerf:  { 1: "возьму", 2: "возьмёшь", 3: "возьмёт", 11: "возьмём", 12: "возьмёте", 13: "возьмут" },
+      imp: "возьми"
+    }
+  },
+  "digi": {
+    ru: "бросок", pos: "ROOT",
+    verbImpf: "кидать", verbPerf: "кинуть",
+    verbForms: {
+      pres: { 1: "кидаю", 2: "кидаешь", 3: "кидает", 11: "кидаем", 13: "кидают" },
+      pastImpf: { m: "кидал", f: "кидала", pl: "кидали" },
+      pastPerf: { m: "кинул", f: "кинула", pl: "кинули" },
+      futPerf:  { 1: "кину", 2: "кинешь", 3: "кинет", 11: "кинем", 13: "кинут" },
+      imp: "кинь"
+    }
+  },
+  "ving": {
+    ru: "ожидание", pos: "ROOT",
+    verbImpf: "ждать", verbPerf: "подождать",
+    verbForms: {
+      pres: { 1: "жду", 2: "ждёшь", 3: "ждёт", 11: "ждём", 12: "ждёте", 13: "ждут" },
+      pastImpf: { m: "ждал", f: "ждала", pl: "ждали" },
+      pastPerf: { m: "подождал", f: "подождала", pl: "подождали" },
+      futPerf:  { 1: "подожду", 2: "подождёшь", 3: "подождёт", 11: "подождём", 13: "подождут" },
+      imp: "жди"
+    }
+  },
+  "ani": {
+    ru: "отпускание", pos: "ROOT",
+    verbImpf: "отпускать", verbPerf: "отпустить",
+    verbForms: {
+      pres: { 1: "отпускаю", 2: "отпускаешь", 3: "отпускает", 11: "отпускаем", 13: "отпускают" },
+      pastImpf: { m: "отпускал", f: "отпускала", pl: "отпускали" },
+      pastPerf: { m: "отпустил", f: "отпустила", pl: "отпустили" },
+      futPerf:  { 1: "отпущу", 2: "отпустишь", 3: "отпустит", 11: "отпустим", 13: "отпустят" },
+      imp: "отпусти"
+    }
+  },
+  "ərlanta": {
+    ru: "смена", pos: "ROOT",
+    verbImpf: "сменять", verbPerf: "сменить",
+    verbForms: {
+      pres: { 1: "сменяю", 2: "сменяешь", 3: "сменяет", 11: "сменяем", 13: "сменяют" },
+      pastImpf: { m: "сменял", f: "сменяла", pl: "сменяли" },
+      pastPerf: { m: "сменил", f: "сменила", pl: "сменили" },
+      futPerf:  { 1: "сменю", 2: "сменишь", 3: "сменит", 11: "сменим", 13: "сменят" }
+    }
+  },
+  "novna": {
+    ru: "сбивание", pos: "ROOT",
+    verbImpf: "сбивать", verbPerf: "сбить",
+    verbForms: {
+      pres: { 1: "сбиваю", 2: "сбиваешь", 3: "сбивает", 11: "сбиваем", 13: "сбивают" },
+      pastImpf: { m: "сбивал", f: "сбивала", pl: "сбивали" },
+      pastPerf: { m: "сбил", f: "сбила", pl: "сбили" },
+      futPerf:  { 1: "собью", 2: "собьёшь", 3: "собьёт", 11: "собьём", 13: "собьют" }
+    }
+  },
+  "khatt": {
+    ru: "затопление", pos: "ROOT",
+    verbImpf: "топить", verbPerf: "утопить",
+    verbForms: {
+      pres: { 1: "топлю", 2: "топишь", 3: "топит", 11: "топим", 13: "топят" },
+      pastImpf: { m: "топил", f: "топила", pl: "топили" },
+      pastPerf: { m: "утопил", f: "утопила", pl: "утопили" },
+      futPerf:  { 1: "утоплю", 2: "утопишь", 3: "утопит", 11: "утопим", 13: "утопят" }
+    }
+  },
+  "spi": {
+    ru: "деление", pos: "ROOT",
+    verbImpf: "делиться", verbPerf: "поделиться",
+    verbForms: {
+      pres: { 1: "делюсь", 2: "делишься", 3: "делится", 11: "делимся", 12: "делитесь", 13: "делятся" },
+      pastImpf: { m: "делился", f: "делилась", pl: "делились" },
+      pastPerf: { m: "поделился", f: "поделилась", pl: "поделились" },
+      futPerf:  { 1: "поделюсь", 2: "поделишься", 3: "поделится", 11: "поделимся", 13: "поделятся" }
+    }
+  },
+  "garda": {
+    ru: "сохранение", pos: "ROOT",
+    verbImpf: "сохранять", verbPerf: "сохранить",
+    verbForms: {
+      pres: { 1: "сохраняю", 2: "сохраняешь", 3: "сохраняет", 11: "сохраняем", 13: "сохраняют" },
+      pastImpf: { m: "сохранял", f: "сохраняла", pl: "сохраняли" },
+      pastPerf: { m: "сохранил", f: "сохранила", pl: "сохранили" },
+      futPerf:  { 1: "сохраню", 2: "сохранишь", 3: "сохранит", 11: "сохраним", 13: "сохранят" },
+      imp: "сохрани"
+    }
+  },
+  "aěinta": {
+    ru: "съёмка", pos: "ROOT",
+    verbImpf: "снимать", verbPerf: "снять",
+    verbForms: {
+      pres: { 1: "снимаю", 2: "снимаешь", 3: "снимает", 11: "снимаем", 13: "снимают" },
+      pastImpf: { m: "снимал", f: "снимала", pl: "снимали" },
+      pastPerf: { m: "снял", f: "сняла", pl: "сняли" },
+      futPerf:  { 1: "сниму", 2: "снимешь", 3: "снимет", 11: "снимем", 13: "снимут" }
+    }
+  },
+  "tossga": {
+    ru: "враньё", pos: "ROOT",
+    verbImpf: "врать", verbPerf: "соврать",
+    verbForms: {
+      pres: { 1: "вру", 2: "врёшь", 3: "врёт", 11: "врём", 12: "врёте", 13: "врут" },
+      pastImpf: { m: "врал", f: "врала", pl: "врали" },
+      pastPerf: { m: "соврал", f: "соврала", pl: "соврали" },
+      futPerf:  { 1: "совру", 2: "соврёшь", 3: "соврёт", 11: "соврём", 13: "соврут" }
+    }
+  },
+  "əksafani": {
+    ru: "исчезновение", pos: "ROOT",
+    verbImpf: "исчезать", verbPerf: "исчезнуть",
+    verbForms: {
+      pres: { 1: "исчезаю", 2: "исчезаешь", 3: "исчезает", 11: "исчезаем", 13: "исчезают" },
+      pastImpf: { m: "исчезал", f: "исчезала", pl: "исчезали" },
+      pastPerf: { m: "исчез", f: "исчезла", pl: "исчезли" },
+      futPerf:  { 1: "исчезну", 2: "исчезнешь", 3: "исчезнет", 11: "исчезнем", 13: "исчезнут" }
+    }
+  },
+  "sinta": {
+    ru: "поиск", pos: "ROOT",
+    verbImpf: "искать", verbPerf: "найти",
+    verbForms: {
+      pres: { 1: "ищу", 2: "ищешь", 3: "ищет", 11: "ищем", 12: "ищете", 13: "ищут" },
+      pastImpf: { m: "искал", f: "искала", pl: "искали" },
+      pastPerf: { m: "нашёл", f: "нашла", pl: "нашли" },
+      futPerf:  { 1: "найду", 2: "найдёшь", 3: "найдёт", 11: "найдём", 13: "найдут" },
+      imp: "найди"
+    }
+  },
+  "so": {
+    ru: "использование", pos: "ROOT",
+    verbImpf: "использовать", verbPerf: "использовать",
+    verbForms: {
+      pres: { 1: "использую", 2: "используешь", 3: "использует", 11: "используем", 12: "используете", 13: "используют" },
+      pastImpf: { m: "использовал", f: "использовала", pl: "использовали" },
+      pastPerf: { m: "использовал", f: "использовала", pl: "использовали" },
+      futPerf:  { 1: "использую", 2: "используешь", 3: "использует", 11: "используем", 13: "используют" }
+    }
+  },
+  "apfi": {
+    ru: "правление", pos: "ROOT",
+    verbImpf: "править", verbPerf: "направить",
+    verbForms: {
+      pres: { 1: "правлю", 2: "правишь", 3: "правит", 11: "правим", 12: "правите", 13: "правят" },
+      pastImpf: { m: "правил", f: "правила", pl: "правили" },
+      pastPerf: { m: "правил", f: "правила", pl: "правили" }
+    }
+  },
+  "kaě": {
+    ru: "слеза", pos: "NOUN", gender: "f",
+    verbImpf: "плакать", verbPerf: "заплакать",
+    cases: { nom: "слеза", acc: "слезу", gen: "слезы", inst: "слезой", pl: "слёзы" },
+    verbForms: {
+      pres: { 1: "плачу", 2: "плачешь", 3: "плачет", 11: "плачем", 12: "плачете", 13: "плачут" },
+      pastImpf: { m: "плакал", f: "плакала", pl: "плакали" },
+      pastPerf: { m: "заплакал", f: "заплакала", pl: "заплакали" },
+      futPerf:  { 1: "заплачу", 2: "заплачешь", 3: "заплачет", 11: "заплачем", 13: "заплачут" },
+      imp: "не плачь"
+    }
+  },
+  "olv": {
+    ru: "чтение", pos: "NOUN", gender: "n",
+    verbImpf: "читать", verbPerf: "прочитать",
+    verbForms: {
+      pres: { 1: "читаю", 2: "читаешь", 3: "читает", 11: "читаем", 12: "читаете", 13: "читают" },
+      pastImpf: { m: "читал", f: "читала", pl: "читали" },
+      pastPerf: { m: "прочитал", f: "прочитала", pl: "прочитали" },
+      futPerf:  { 1: "прочитаю", 2: "прочитаешь", 3: "прочитает", 11: "прочитаем", 13: "прочитают" },
+      imp: "читай"
+    }
+  },
+  "oumi": {
+    ru: "отдых", pos: "NOUN",
+    verbImpf: "отдыхать", verbPerf: "отдохнуть",
+    verbForms: {
+      pres: { 1: "отдыхаю", 2: "отдыхаешь", 3: "отдыхает", 11: "отдыхаем", 13: "отдыхают" },
+      pastImpf: { m: "отдыхал", f: "отдыхала", pl: "отдыхали" },
+      pastPerf: { m: "отдохнул", f: "отдохнула", pl: "отдохнули" },
+      futPerf:  { 1: "отдохну", 2: "отдохнёшь", 3: "отдохнёт", 11: "отдохнём", 13: "отдохнут" }
+    }
+  },
+  "torim": {
+    ru: "показ", pos: "ROOT",
+    verbImpf: "показывать", verbPerf: "показать",
+    verbForms: {
+      pres: { 1: "показываю", 2: "показываешь", 3: "показывает", 11: "показываем", 13: "показывают" },
+      pastImpf: { m: "показывал", f: "показывала", pl: "показывали" },
+      pastPerf: { m: "показал", f: "показала", pl: "показали" },
+      futPerf:  { 1: "покажу", 2: "покажешь", 3: "покажет", 11: "покажем", 13: "покажут" },
+      imp: "покажи"
+    }
+  },
 
-  // Корни из Virkinori и Учебного пособия
-  "virkin":    { ru: "правило", pos: "NOUN", adjRu: "правильный", cases: { nom: "правило", acc: "правило", gen: "правила", pl: "правила" } },
-  "arik":      { ru: "лексика", pos: "NOUN", cases: { nom: "лексика", acc: "лексику", gen: "лексики", pl: "слова" } },
-  "villim":    { ru: "учёба", pos: "NOUN", adjRu: "учебный", cases: { nom: "учёба", acc: "учёбу", pl: "учёбы" } },
+  // --- СУЩЕСТВИТЕЛЬНЫЕ, ПРИЛАГАТЕЛЬНЫЕ И КОРНИ ИЗ НОВОГО СПИСКА ---
+  "koən":      { ru: "человек", pos: "NOUN", cases: { nom: "человек", acc: "человека", gen: "человека", dat: "человеку", inst: "человеком", pl: "люди" } },
+  "šəbi":      { ru: "доброта", pos: "NOUN", gender: "f", adjRu: "добрый" },
+  "suěng":     { ru: "день", pos: "NOUN", cases: { nom: "день", acc: "день", gen: "дня", prep: "дне", inst: "днём", pl: "дни" } },
+  "nifijo":    { ru: "ночь", pos: "NOUN", gender: "f", adjRu: "ночной", cases: { nom: "ночь", acc: "ночь", gen: "ночи", prep: "ночи", inst: "ночью", pl: "ночи" } },
+  "suəjo":     { ru: "вечер", pos: "NOUN", adjRu: "вечерний", cases: { nom: "вечер", acc: "вечер", gen: "вечера", prep: "вечере", inst: "вечером", pl: "вечера" } },
+  "niěng":     { ru: "утро", pos: "NOUN", gender: "n", verbalNounRu: "рассвет", verbalAdjRu: "рассветающий", cases: { nom: "утро", acc: "утро", gen: "утра", prep: "утре", inst: "утром", pl: "утра" } },
+  "jian":      { ru: "друг", pos: "NOUN", cases: { nom: "друг", acc: "друга", gen: "друга", dat: "другу", inst: "другом", pl: "друзья" } },
+  "šian":      { ru: "спокойствие", pos: "NOUN", gender: "n", adjRu: "спокойный" },
+  "voič":      { ru: "звук", pos: "NOUN", verbImpf: "звучать", verbPerf: "прозвучать" },
+  "ənossia":   { ru: "работа", pos: "NOUN", gender: "f", verbImpf: "работать", verbPerf: "поработать" },
+  "rəbi":      { ru: "желание", pos: "NOUN", gender: "n", verbImpf: "желать", verbPerf: "пожелать" },
   "kimiem":    { ru: "удача", pos: "NOUN", gender: "f", adjRu: "удачный", cases: { nom: "удача", acc: "удачу", gen: "удачи", inst: "удачей", pl: "удачи" } },
-  "əstog":     { ru: "взрыв", pos: "NOUN", adjRu: "взрывной", cases: { nom: "взрыв", acc: "взрыв", gen: "взрыва", pl: "взрывы" } },
-  "plever":    { ru: "благо", pos: "ROOT", adjRu: "хороший", compRu: "лучше", supRu: "лучший" },
-  "niěng":     { ru: "утро", pos: "NOUN", verbalNounRu: "рассвет", verbalAdjRu: "рассветающий", cases: { nom: "утро", acc: "утро", prep: "утре", pl: "утра" } },
-  "fiət":      { ru: "надежда", pos: "NOUN", negNounRu: "безнадёга", cases: { nom: "надежда", acc: "надежду", pl: "надежды" } },
-  "əsiəs":     { ru: "дом", pos: "NOUN", dimRu: "домик", cases: { nom: "дом", acc: "дом", gen: "дома", prep: "доме", inst: "домом", pl: "дома" } },
+  "rakeě":     { ru: "сегодня", pos: "ADV" },
+  "krəttə":    { ru: "письмо", pos: "NOUN", gender: "n", dimRu: "письмецо", verbImpf: "писать", verbPerf: "написать", cases: { nom: "письмо", acc: "письмо", gen: "письма", prep: "письме", pl: "письма" } },
+  "šəbon":     { ru: "жизнь", pos: "NOUN", gender: "f", adjRu: "живой", verbImpf: "жить", verbPerf: "прожить" },
+  "fiət":      { ru: "надежда", pos: "NOUN", gender: "f", negNounRu: "депрессия", verbImpf: "надеяться", verbPerf: "понадеяться" },
+  "viəssiv":   { ru: "грусть", pos: "NOUN", gender: "f", adjRu: "грустный", verbImpf: "грустить", verbPerf: "загрустить" },
+  "zətt":      { ru: "важность", pos: "ROOT", adjRu: "важно", adjAttrRu: "важный" },
+  "mami":      { ru: "мать", pos: "NOUN", gender: "f", cases: { nom: "мать", acc: "мать", gen: "матери", dat: "матери", inst: "матерью", pl: "матери" } },
+  "dəri":      { ru: "отец", pos: "NOUN", cases: { nom: "отец", acc: "отца", gen: "отца", dat: "отцу", inst: "отцом", pl: "отцы" } },
+  "grən":      { ru: "старость", pos: "NOUN", gender: "f", adjRu: "старый", verbImpf: "стареть", verbPerf: "постареть" },
   "vimik":     { ru: "магазин", pos: "NOUN", dimRu: "магазинчик", cases: { nom: "магазин", acc: "магазин", prep: "магазине", pl: "магазины" } },
-  "uvi":       { ru: "два", pos: "NUM", ordRu: "второй" },
+  "šrəin":     { ru: "нужда", pos: "NOUN", gender: "f", adjRu: "нужный", verbImpf: "нуждаться" },
+  "avən":      { ru: "пища", pos: "NOUN", gender: "f", verbImpf: "есть", verbPerf: "съесть" },
+  "ěir":       { ru: "год", pos: "NOUN", cases: { nom: "год", acc: "год", gen: "года", prep: "году", pl: "годы" } },
+  "dərəl":     { ru: "смерть", pos: "NOUN", gender: "f", adjRu: "мёртвый", verbImpf: "умирать", verbPerf: "умереть" },
+  "funci":     { ru: "деньга", pos: "NOUN", gender: "f", cases: { nom: "деньга", pl: "деньги" } },
+  "təkudake":  { ru: "пицца", pos: "NOUN", gender: "f" },
+  "beke":      { ru: "хлеб", pos: "NOUN", dimRu: "хлебушек" },
+  "štərn":     { ru: "город", pos: "NOUN", dimRu: "городок", adjRu: "городской" },
+  "pərpi":     { ru: "обязанность", pos: "NOUN", gender: "f", adjRu: "обязанный" },
+  "kərit":     { ru: "кролик", pos: "NOUN", animate: true },
+  "nəzga":     { ru: "жопа", pos: "NOUN", gender: "f" },
+  "filəks":    { ru: "танец", pos: "NOUN", verbImpf: "танцевать", verbPerf: "станцевать", cases: { nom: "танец", acc: "танец", gen: "танца", pl: "танцы" } },
+  "əstog":     { ru: "взрыв", pos: "NOUN", adjRu: "взрывной", verbImpf: "взрывать", verbPerf: "взорвать" },
+  "missori":   { ru: "история", pos: "NOUN", gender: "f" },
+  "flimek":    { ru: "жидкость", pos: "NOUN", gender: "f", adjRu: "жидкий" },
+  "bemek":     { ru: "пиво", pos: "NOUN", gender: "n" },
+  "skila":     { ru: "школа", pos: "NOUN", gender: "f", adjRu: "школьный" },
+  "miko":      { ru: "конец", pos: "NOUN", verbImpf: "заканчивать", verbPerf: "закончить", cases: { nom: "конец", acc: "конец", gen: "конца", prep: "конце", pl: "концы" } },
+  "al'či":     { ru: "шедевр", pos: "NOUN", adjRu: "прекрасно", adjAttrRu: "прекрасный" },
+  "klibet":    { ru: "навязчивость", pos: "NOUN", gender: "f", adjRu: "навязчивый" },
+  "boši":      { ru: "скука", pos: "NOUN", gender: "f", adjRu: "скучно", adjAttrRu: "скучный", verbImpf: "скучать" },
+  "svizən":    { ru: "ненависть", pos: "NOUN", gender: "f", verbImpf: "ненавидеть", verbPerf: "возненавидеть" },
+  "pel'ver":   { ru: "ирония", pos: "ROOT", adjRu: "хорошо (ирония)" },
+  "toěim":     { ru: "спирт", pos: "NOUN" },
+  "ěummi":     { ru: "алкоголь", pos: "NOUN", adjRu: "алкогольный" },
+  "čammi":     { ru: "вода", pos: "NOUN", gender: "f", dimRu: "водичка" },
+  "əlič":      { ru: "величина", pos: "ROOT", adjRu: "большой", compRu: "больше", supRu: "наибольший" },
+  "mikin":     { ru: "малость", pos: "ROOT", adjRu: "маленький", compRu: "меньше", supRu: "наименьший" },
+  "dəsi":      { ru: "боль", pos: "NOUN", gender: "f", adjRu: "больно", adjAttrRu: "больной" },
+  "nasmet":    { ru: "чистота", pos: "NOUN", gender: "f", adjRu: "чистый" },
+  "kitra":     { ru: "буква", pos: "NOUN", gender: "f" },
+  "arkin":     { ru: "слово", pos: "NOUN", gender: "n", cases: { nom: "слово", acc: "слово", gen: "слова", prep: "слове", pl: "слова" } },
+  "olik":      { ru: "книга", pos: "NOUN", gender: "f", dimRu: "книжка" },
+  "arik":      { ru: "словарь", pos: "NOUN", cases: { nom: "словарь", acc: "словарь", gen: "словаря", prep: "словаре", pl: "словари" } },
+  "aěnši":     { ru: "победа", pos: "NOUN", gender: "f", verbImpf: "побеждать", verbPerf: "победить" },
+  "keltrin":   { ru: "поражение", pos: "NOUN", gender: "n", verbImpf: "проигрывать", verbPerf: "проиграть" },
+  "kuantar":   { ru: "преодоление", pos: "NOUN", gender: "n", verbImpf: "преодолевать", verbPerf: "преодолеть" },
+  "virkin":    { ru: "правило", pos: "NOUN", gender: "n", adjRu: "правильный", cases: { nom: "правило", acc: "правило", gen: "правила", pl: "правила" } },
+  "kvarik":    { ru: "пляж", pos: "NOUN" },
+  "briš":      { ru: "теплота", pos: "ROOT", adjRu: "тепло", adjAttrRu: "тёплый" },
+  "sokot":     { ru: "холод", pos: "NOUN", adjRu: "холодно", adjAttrRu: "холодный" },
+  "finta":     { ru: "женщина", pos: "NOUN", gender: "f", animate: true },
+  "kərm":      { ru: "мужчина", pos: "NOUN", gender: "m", animate: true, cases: { nom: "мужчина", acc: "мужчину", gen: "мужчины", dat: "мужчине", inst: "мужчиной", pl: "мужчины" } },
+  "mikirm":    { ru: "парень", pos: "NOUN", gender: "m", animate: true, cases: { nom: "парень", acc: "парня", gen: "парня", dat: "парню", inst: "парнем", pl: "парни" } },
+  "mikita":    { ru: "девушка", pos: "NOUN", gender: "f", animate: true },
+  "kvatang":   { ru: "проблема", pos: "NOUN", gender: "f" },
+  "dariě":     { ru: "лето", pos: "NOUN", gender: "n" },
+  "vallessiě": { ru: "осень", pos: "NOUN", gender: "f" },
+  "vallessi":  { ru: "осень", pos: "NOUN", gender: "f" },
+  "severna":   { ru: "зима", pos: "NOUN", gender: "f", adjRu: "зимний" },
+  "villon":    { ru: "весна", pos: "NOUN", gender: "f", adjRu: "весенний" },
+  "təbloš":    { ru: "кринж", pos: "NOUN", adjRu: "кринжовый" },
+  "simri":     { ru: "легенда", pos: "NOUN", gender: "f", adjRu: "легендарный" },
+  "finə":      { ru: "цветок", pos: "NOUN", cases: { nom: "цветок", acc: "цветок", gen: "цветка", pl: "цветы" } },
+  "lador":     { ru: "взгляд", pos: "NOUN", verbImpf: "смотреть", verbPerf: "посмотреть" },
+  "tir":       { ru: "быстрота", pos: "ROOT", adjRu: "быстро", adjAttrRu: "быстрый" },
+  "diěng":     { ru: "понедельник", pos: "NOUN" },
+  "uvěng":     { ru: "вторник", pos: "NOUN" },
+  "arěng":     { ru: "среда", pos: "NOUN", gender: "f" },
+  "kaěng":     { ru: "четверг", pos: "NOUN" },
+  "ivěng":     { ru: "пятница", pos: "NOUN", gender: "f" },
+  "frəěg":     { ru: "воскресенье", pos: "NOUN", gender: "n" },
+  "ěmika":     { ru: "дело", pos: "NOUN", gender: "n", verbImpf: "делать", verbPerf: "сделать", cases: { nom: "дело", acc: "дело", gen: "дела", prep: "деле", pl: "дела" } },
+  "bert":      { ru: "выстрел", pos: "NOUN", verbImpf: "стрелять", verbPerf: "выстрелить" },
+  "dərta":     { ru: "месяц", pos: "NOUN", cases: { nom: "месяц", acc: "месяц", gen: "месяца", prep: "месяце", pl: "месяцы" } },
+  "pinh":      { ru: "существо", pos: "NOUN", gender: "n", verbImpf: "существовать" },
+  "hinštəh":   { ru: "ублюдок", pos: "NOUN", animate: true, cases: { nom: "ублюдок", acc: "ублюдка", gen: "ублюдка", pl: "ублюдки" } },
+  "šotti":     { ru: "хер", pos: "NOUN" },
+  "kais":      { ru: "кот", pos: "NOUN", animate: true },
+  "kaiša":     { ru: "кошка", pos: "NOUN", gender: "f", animate: true },
+  "koěma":     { ru: "секс", pos: "NOUN", adjRu: "ёбаный", verbImpf: "трахать", verbPerf: "выебать" },
+  "əlim":      { ru: "вопрос", pos: "NOUN", adjRu: "группа", verbImpf: "спрашивать", verbPerf: "спросить" },
+  "mul":       { ru: "медлительность", pos: "ROOT", adjRu: "медленно", adjAttrRu: "медленный" },
+  "hiə":       { ru: "счастье", pos: "NOUN", gender: "n", adjRu: "счастливый" },
 
-  // Слова из иллюстрированного алфавита
-  "lunáriěa":  { ru: "январь", pos: "NOUN", cases: { nom: "январь", prep: "январе", pl: "январи" } },
-  "dariě":     { ru: "лето", pos: "NOUN", cases: { nom: "лето", prep: "лете", inst: "летом", pl: "лета" } },
-  "ěmika":     { ru: "дело", pos: "NOUN", cases: { nom: "дело", acc: "дело", prep: "деле", pl: "дела" } },
-  "disapěnto": { ru: "Дисапьенто", pos: "NOUN" },
-  "beke":      { ru: "хлеб", pos: "NOUN", dimRu: "хлебушек", cases: { nom: "хлеб", acc: "хлеб", gen: "хлеба", inst: "хлебом", pl: "хлеба" } },
-  "aěnson":    { ru: "урок", pos: "NOUN", cases: { nom: "урок", acc: "урок", prep: "уроке", pl: "уроки" } },
-  "čammi":     { ru: "вода", pos: "NOUN", gender: "f", dimRu: "водичка", cases: { nom: "вода", acc: "воду", gen: "воды", inst: "водой", pl: "воды" } },
-  "dəri":      { ru: "отец", pos: "NOUN", cases: { nom: "отец", acc: "отца", gen: "отца", inst: "отцом", pl: "отцы" } },
-  "vallessi":  { ru: "осень", pos: "NOUN", gender: "f", cases: { nom: "осень", acc: "осень", prep: "осени", inst: "осенью", pl: "осени" } },
-  "ěammin":    { ru: "союз", pos: "NOUN", cases: { nom: "союз", acc: "союз", prep: "союзе", pl: "союзы" } },
-  "finta":     { ru: "женщина", pos: "NOUN", gender: "f", cases: { nom: "женщина", acc: "женщину", gen: "женщины", inst: "женщиной", pl: "женщины" } },
-  "gastər":    { ru: "машина", pos: "NOUN", gender: "f", dimRu: "машинка", cases: { nom: "машина", acc: "машину", prep: "машине", inst: "машиной", pl: "машины" } },
-  "hibric":    { ru: "дыня", pos: "NOUN", gender: "f", cases: { nom: "дыня", acc: "дыню", pl: "дыни" } },
-  "ilém":      { ru: "лицо", pos: "NOUN", dimRu: "личико", cases: { nom: "лицо", acc: "лицо", prep: "лице", pl: "лица" } },
-  "jian":      { ru: "друг", pos: "NOUN", adjRu: "дружественный", cases: { nom: "друг", acc: "друга", gen: "друга", inst: "другом", pl: "друзья" } },
-  "krəttə":    { ru: "письмо", pos: "NOUN", dimRu: "письмецо", cases: { nom: "письмо", acc: "письмо", prep: "письме", pl: "письма" } },
-  "cffur":     { ru: "мороз", pos: "ROOT", adjRu: "морозно", cases: { nom: "мороз", pl: "морозы" } },
-  "lənt":      { ru: "земля", pos: "NOUN", gender: "f", adjRu: "земной", cases: { nom: "земля", acc: "землю", prep: "земле", pl: "земли" } },
-  "mist":      { ru: "чай", pos: "NOUN", dimRu: "чаёк", adjRu: "чайный", cases: { nom: "чай", acc: "чай", gen: "чая", inst: "чаем", pl: "чаи" } },
-  "nifijo":    { ru: "ночь", pos: "NOUN", gender: "f", adjRu: "ночной", cases: { nom: "ночь", acc: "ночь", prep: "ночи", inst: "ночью", pl: "ночи" } },
-  "olik":      { ru: "книга", pos: "NOUN", gender: "f", dimRu: "книжка", cases: { nom: "книга", acc: "книгу", gen: "книги", prep: "книге", inst: "книгой", pl: "книги" } },
-  "poěno":     { ru: "море", pos: "NOUN", adjRu: "морской", cases: { nom: "море", acc: "море", prep: "море", pl: "моря" } },
-  "rapirit":   { ru: "скорость", pos: "NOUN", gender: "f", adjRu: "скоростной", cases: { nom: "скорость", acc: "скорость", pl: "скорости" } },
-  "severna":   { ru: "зима", pos: "NOUN", gender: "f", adjRu: "зимний", cases: { nom: "зима", acc: "зиму", prep: "зиме", inst: "зимой", pl: "зимы" } },
-  "štərn":     { ru: "город", pos: "NOUN", dimRu: "городок", adjRu: "городской", cases: { nom: "город", acc: "город", prep: "городе", pl: "города" } },
-  "təkudake":  { ru: "пицца", pos: "NOUN", gender: "f", cases: { nom: "пицца", acc: "пиццу", pl: "пиццы" } },
-  "zortor":    { ru: "носорог", pos: "NOUN", cases: { nom: "носорог", acc: "носорога", pl: "носороги" } },
-  "nuolä":     { ru: "облако", pos: "NOUN", dimRu: "облачко", cases: { nom: "облако", acc: "облако", pl: "облака" } },
-  "lö":        { ru: "снег", pos: "NOUN", dimRu: "снежок", adjRu: "снежный", cases: { nom: "снег", acc: "снег", prep: "снегу", inst: "снегом", pl: "снега" } },
-  "ünir":      { ru: "щит", pos: "NOUN", cases: { nom: "щит", acc: "щит", inst: "щитом", pl: "щиты" } },
+  // Месяцы
+  "lunariěa":    { ru: "январь", pos: "NOUN" },
+  "lunáriěa":    { ru: "январь", pos: "NOUN" },
+  "firazziěa":   { ru: "февраль", pos: "NOUN" },
+  "kvinitriěa":  { ru: "март", pos: "NOUN" },
+  "šironniěa":   { ru: "апрель", pos: "NOUN" },
+  "aksəlentiěa": { ru: "май", pos: "NOUN" },
+  "ěapitriěa":   { ru: "июнь", pos: "NOUN" },
+  "auraniěa":    { ru: "июль", pos: "NOUN" },
+  "kaledriěa":   { ru: "август", pos: "NOUN" },
+  "niěuliěa":    { ru: "сентябрь", pos: "NOUN" },
+  "akvaviěa":    { ru: "октябрь", pos: "NOUN" },
+  "əll'ariěa":   { ru: "ноябрь", pos: "NOUN" },
+  "misiliriěa":  { ru: "декабрь", pos: "NOUN" },
 
-  // Разговорная лексика
-  "korl":       { ru: "истина", pos: "ROOT", adjRu: "действительно", adjAttrRu: "настоящий" },
-  "jogěnt":     { ru: "зло", pos: "ROOT", adjRu: "плохо", compRu: "хуже", supRu: "худший" },
-  "lik":        { ru: "как", pos: "ROOT", adjRu: "так" },
-  "děablo":     { ru: "дьявол", pos: "NOUN", cases: { nom: "дьявол", acc: "дьявола", pl: "дьяволы" } },
-  "missori":    { ru: "история", pos: "NOUN", gender: "f", cases: { nom: "история", acc: "историю", prep: "истории", pl: "истории" } },
-  "immidəliěa": { ru: "иммиделия", pos: "NOUN", gender: "f", cases: { nom: "иммиделия", acc: "иммиделию", prep: "иммиделии" } },
-  "mikita":     { ru: "девушка", pos: "NOUN", gender: "f", cases: { nom: "девушка", acc: "девушку", prep: "девушке", inst: "девушкой", pl: "девушки" } },
-  "hinštəh":    { ru: "ублюдок", pos: "NOUN", cases: { nom: "ублюдок", acc: "ублюдка", pl: "ублюдки" } },
+  "aěkrěěsěěaě": { ru: "странность", pos: "ROOT", adjRu: "странный" },
+  "mist":        { ru: "чай", pos: "NOUN", dimRu: "чаёк", adjRu: "чайный" },
+  "gastər":      { ru: "машина", pos: "NOUN", gender: "f", dimRu: "машинка", cases: { nom: "машина", acc: "машину", gen: "машины", prep: "машине", inst: "машиной", pl: "машины" } },
+  "šcən":        { ru: "камень", pos: "NOUN", cases: { nom: "камень", acc: "камень", gen: "камня", inst: "камнем", pl: "камни" } },
+  "əlišcən":     { ru: "гора", pos: "NOUN", gender: "f", cases: { nom: "гора", acc: "гору", gen: "горы", prep: "горе", pl: "горы" } },
+  "kostər":      { ru: "колесо", pos: "NOUN", gender: "n", cases: { nom: "колесо", acc: "колесо", gen: "колеса", pl: "колёса" } },
+  "kosmi":       { ru: "велосипед", pos: "NOUN" },
+  "dopr":        { ru: "уверенность", pos: "NOUN", gender: "f", adjRu: "уверенный" },
+  "kurvěna":     { ru: "шлюха", pos: "NOUN", gender: "f", animate: true },
+  "narvin":      { ru: "путь", pos: "NOUN", cases: { nom: "путь", acc: "путь", gen: "пути", prep: "пути", inst: "путём", pl: "пути" } },
+  "mrampet":     { ru: "секрет", pos: "NOUN", adjRu: "секретный" },
+  "štəgl":       { ru: "новизна", pos: "ROOT", adjRu: "новый" },
+  "rəpos":       { ru: "сообщение", pos: "NOUN", gender: "n", verbImpf: "сообщать", verbPerf: "сообщить" },
+  "miki":        { ru: "сон", pos: "NOUN", verbImpf: "спать", verbPerf: "уснуть", cases: { nom: "сон", acc: "сон", gen: "сна", prep: "сне", pl: "сны" } },
+  "čattəl":      { ru: "канал", pos: "NOUN" },
+  "strot":       { ru: "старт", pos: "NOUN", verbImpf: "начинать", verbPerf: "начать" },
+  "vəscim":      { ru: "настройка", pos: "NOUN", gender: "f", cases: { nom: "настройка", pl: "настройки" } },
+  "fəvor":       { ru: "дерево", pos: "NOUN", gender: "n", cases: { nom: "дерево", acc: "дерево", gen: "дерева", prep: "дереве", pl: "деревья" } },
+  "saěl":        { ru: "болезнь", pos: "NOUN", gender: "f", verbImpf: "болеть", verbPerf: "заболеть" },
+  "lənt":        { ru: "место", pos: "NOUN", gender: "n", cases: { nom: "место", acc: "место", gen: "места", prep: "месте", pl: "места" } },
+  "dantra":      { ru: "страна", pos: "NOUN", gender: "f", cases: { nom: "страна", acc: "страну", gen: "страны", prep: "стране", pl: "страны" } },
+  "sinna":       { ru: "поездка", pos: "NOUN", gender: "f", verbImpf: "ехать", verbPerf: "поехать" },
+  "trit":        { ru: "улица", pos: "NOUN", gender: "f", cases: { nom: "улица", acc: "улицу", gen: "улицы", prep: "улице", pl: "улицы" } },
+  "hort":        { ru: "вещь", pos: "NOUN", gender: "f", cases: { nom: "вещь", acc: "вещь", gen: "вещи", pl: "вещи" } },
+  "linum":       { ru: "язык", pos: "NOUN", cases: { nom: "язык", acc: "язык", gen: "языка", prep: "языке", pl: "языки" } },
+  "sittal'":     { ru: "встреча", pos: "NOUN", gender: "f", verbImpf: "встречать", verbPerf: "встретить", cases: { nom: "встреча", acc: "встречу", gen: "встречи", pl: "встречи" } },
+  "slin":        { ru: "легко", pos: "ADV", adjRu: "лёгкий" },
+  "strott":      { ru: "сложность", pos: "ROOT", adjRu: "сложно", adjAttrRu: "сложный" },
+  "nica":        { ru: "имя", pos: "NOUN", gender: "n", cases: { nom: "имя", acc: "имя", gen: "имени", inst: "именем", pl: "имена" } },
+  "nivi":        { ru: "фамилия", pos: "NOUN", gender: "f" },
+  "miaca":       { ru: "матчество", pos: "NOUN", gender: "n" },
+  "nuol'a":      { ru: "облако", pos: "NOUN", gender: "n", dimRu: "облачко", adjRu: "облачный", cases: { nom: "облако", acc: "облако", gen: "облака", pl: "облака" } },
+  "nuolä":       { ru: "облако", pos: "NOUN", gender: "n", dimRu: "облачко", cases: { nom: "облако", acc: "облако", pl: "облака" } },
+  "nami":        { ru: "нога", pos: "NOUN", gender: "f", cases: { nom: "нога", acc: "ногу", gen: "ноги", prep: "ноге", inst: "ногой", pl: "ноги" } },
+  "korəl":       { ru: "труп", pos: "NOUN" },
+  "plošt":       { ru: "дождь", pos: "NOUN", cases: { nom: "дождь", acc: "дождь", gen: "дождя", inst: "дождём", pl: "дожди" } },
+  "falina":      { ru: "симуляция", pos: "NOUN", gender: "f" },
+  "simfona":     { ru: "симфония", pos: "NOUN", gender: "f" },
+  "akrn":        { ru: "кусок", pos: "NOUN", cases: { nom: "кусок", acc: "кусок", gen: "куска", pl: "куски" } },
+  "viš":         { ru: "холст", pos: "NOUN" },
+  "sanita":      { ru: "искусство", pos: "NOUN", gender: "n" },
+  "dlaka":       { ru: "рыба", pos: "NOUN", gender: "f", animate: true },
+  "mitsa":       { ru: "погода", pos: "NOUN", gender: "f" },
+  "bəlla":       { ru: "песня", pos: "NOUN", gender: "f", verbImpf: "петь", verbPerf: "спеть" },
+  "vaful'":      { ru: "птица", pos: "NOUN", gender: "f", animate: true, cases: { nom: "птица", acc: "птицу", gen: "птицы", pl: "птицы" } },
+  "blit":        { ru: "свет", pos: "NOUN", adjRu: "светлый", verbImpf: "светить" },
+  "likiət":      { ru: "солнце", pos: "NOUN", gender: "n", adjRu: "солнечный" },
+  "trin'":       { ru: "блеск", pos: "NOUN", adjRu: "блестящий", verbImpf: "блестеть" },
+  "dlaot":       { ru: "удочка", pos: "NOUN", gender: "f" },
+  "taot":        { ru: "палка", pos: "NOUN", gender: "f" },
+  "bikit":       { ru: "богатство", pos: "NOUN", adjRu: "богатый" },
+  "lon'":        { ru: "длинный", pos: "ADJ", adjRu: "длинный" },
+  "som":         { ru: "краткость", pos: "ROOT", adjRu: "короткий" },
+  "tufšə":       { ru: "долгота", pos: "ROOT", adjRu: "долго", adjAttrRu: "долгий" },
+  "štraut":      { ru: "кратковременность", pos: "ROOT", adjRu: "недолго", adjAttrRu: "недолгий" },
+  "moik":        { ru: "монета", pos: "NOUN", gender: "f" },
+  "maino":       { ru: "шахта", pos: "NOUN", gender: "f", cases: { nom: "шахта", acc: "шахту", gen: "шахты", prep: "шахте", pl: "шахты" } },
+  "tin":         { ru: "веселье", pos: "NOUN", gender: "n", adjRu: "весело", adjAttrRu: "весёлый", verbImpf: "веселиться" },
+  "anno":        { ru: "прошлое", pos: "NOUN", gender: "n" },
+  "sui":         { ru: "самоубийство", pos: "NOUN", gender: "n" },
+  "šənnon":      { ru: "вселенная", pos: "NOUN", gender: "f" },
+  "siběko":      { ru: "личность", pos: "NOUN", gender: "f", adjRu: "субъективный", cases: { nom: "личность", acc: "личность", gen: "личности", pl: "личности" } },
+  "linl":        { ru: "вероятность", pos: "ROOT", adjRu: "вероятно", adjAttrRu: "вероятный" },
+  "kantin":      { ru: "частота", pos: "ROOT", adjRu: "часто", adjAttrRu: "частый", negNounRu: "редко" },
+  "měěopoli":    { ru: "любовь к котам", pos: "NOUN", gender: "f" },
+  "kastərn":     { ru: "тюрьма", pos: "NOUN", gender: "f", cases: { nom: "тюрьма", acc: "тюрьму", gen: "тюрьмы", prep: "тюрьме", pl: "тюрьмы" } },
+  "rapirit":     { ru: "скорость", pos: "NOUN", gender: "f", adjRu: "скоростной" },
+  "rakima":      { ru: "жадность", pos: "NOUN", gender: "f", adjRu: "жадный" },
+  "katišta":     { ru: "сказка", pos: "NOUN", gender: "f" },
+  "nət":         { ru: "след", pos: "ROOT", adjRu: "следующий" },
+  "valika":      { ru: "волна", pos: "NOUN", gender: "f" },
+  "strantr":     { ru: "опасность", pos: "NOUN", gender: "f", adjRu: "опасный" },
+  "kval'f":      { ru: "тяжесть", pos: "ROOT", adjRu: "тяжёлый" },
+  "poěno":       { ru: "море", pos: "NOUN", gender: "n", adjRu: "морской", cases: { nom: "море", acc: "море", gen: "моря", prep: "море", pl: "моря" } },
+  "ond":         { ru: "дно", pos: "NOUN", gender: "n" },
+  "snort":       { ru: "эпопея", pos: "NOUN", gender: "f" },
+  "katijor":     { ru: "времяпрепровождение", pos: "NOUN", gender: "n" },
+  "digirəm":     { ru: "заброшенность", pos: "ROOT", adjRu: "заброшенный" },
+  "aěnson":      { ru: "урок", pos: "NOUN" },
+  "štrəd":       { ru: "середина", pos: "NOUN", gender: "f" },
+  "cavrik":      { ru: "север", pos: "NOUN", adjRu: "северный" },
+  "ěllin":       { ru: "юг", pos: "NOUN", adjRu: "южный" },
+  "al'min":      { ru: "запад", pos: "NOUN", adjRu: "западный" },
+  "mirika":      { ru: "восток", pos: "NOUN", adjRu: "восточный" },
+  "dětal":       { ru: "закон", pos: "NOUN", adjRu: "законный" },
+  "dětalinar":   { ru: "парламент", pos: "NOUN" },
+  "nanět":       { ru: "нация", pos: "NOUN", gender: "f", adjRu: "национальный" },
+  "apromonšikarrit": { ru: "изоляция", pos: "NOUN", gender: "f" },
+  "vivall":      { ru: "молодость", pos: "NOUN", gender: "f", adjRu: "молодой" },
+  "iě":          { ru: "лёд", pos: "NOUN", adjRu: "ледяной", cases: { nom: "лёд", acc: "лёд", gen: "льда", prep: "льду", inst: "льдом", pl: "льды" } },
+  "tikr":        { ru: "плечо", pos: "NOUN", gender: "n", cases: { nom: "плечо", acc: "плечо", gen: "плеча", pl: "плечи" } },
+  "nal'a":       { ru: "звезда", pos: "NOUN", gender: "f", cases: { nom: "звезда", acc: "звезду", gen: "звезды", pl: "звёзды" } },
+  "nəzfit":      { ru: "туалет", pos: "NOUN" },
+  "ěkfit":       { ru: "комната", pos: "NOUN", gender: "f", cases: { nom: "комната", acc: "комнату", gen: "комнаты", prep: "комнате", pl: "комнаты" } },
+  "ěammin":      { ru: "союз", pos: "NOUN" },
+  "opat":        { ru: "фанат", pos: "NOUN", animate: true },
+  "pilir":       { ru: "красота", pos: "NOUN", gender: "f", adjRu: "красивый" },
+  "ěap":         { ru: "олеандр", pos: "NOUN" },
+  "policiviěa":  { ru: "полиция", pos: "NOUN", gender: "f" },
+  "antarda":     { ru: "партия", pos: "NOUN", gender: "f" },
+  "okit":        { ru: "глаз", pos: "NOUN", cases: { nom: "глаз", acc: "глаз", gen: "глаза", prep: "глазу", inst: "глазом", pl: "глаза" } },
+  "goěšik":      { ru: "уважение", pos: "NOUN", gender: "n", adjRu: "уважаемый", verbImpf: "уважать" },
+  "villim":      { ru: "учёба", pos: "NOUN", gender: "f", adjRu: "учебный", verbImpf: "учиться", verbPerf: "научиться" },
+  "farkuat":     { ru: "герб", pos: "NOUN" },
+  "gardaannikasən": { ru: "консерватизм", pos: "NOUN" },
+  "vimista":     { ru: "время", pos: "NOUN", gender: "n", cases: { nom: "время", acc: "время", gen: "времени", prep: "времени", inst: "временем", pl: "времена" } },
+  "ěrton":       { ru: "глагол", pos: "NOUN" },
+  "bas'a":       { ru: "брат", pos: "NOUN", animate: true, cases: { nom: "брат", acc: "брата", gen: "брата", dat: "брату", inst: "братом", pl: "братья" } },
+  "mal'a":       { ru: "сестра", pos: "NOUN", gender: "f", animate: true, cases: { nom: "сестра", acc: "сестру", gen: "сестры", dat: "сестре", inst: "сестрой", pl: "сёстры" } },
+  "lirt":        { ru: "ребёнок", pos: "NOUN", animate: true, cases: { nom: "ребёнок", acc: "ребёнка", gen: "ребёнка", dat: "ребёнку", inst: "ребёнком", pl: "дети" } },
+  "mil'tropa":   { ru: "прогулка", pos: "NOUN", gender: "f", verbImpf: "гулять", verbPerf: "погулять" },
+  "skvif":       { ru: "выбор", pos: "NOUN", verbImpf: "выбирать", verbPerf: "выбрать" },
+  "itar":        { ru: "вариант", pos: "NOUN" },
+  "massoriton":  { ru: "прилагательное", pos: "NOUN", gender: "n" },
+  "issis":       { ru: "суффикс", pos: "NOUN" },
+  "kofi":        { ru: "демократия", pos: "NOUN", gender: "f" },
+  "abskroftənviš": { ru: "городской пейзаж", pos: "NOUN" },
+  "svizzarra":   { ru: "свобода", pos: "NOUN", adjRu: "свободный", gender: "f"},
+  "ontrәsant":   { ru: "интерес", pos: "NOUN", adjRu: "интересный", gender: "m"},
+  "sunosienza":  { ru: "сознание", pos: "NOUN", gender: "n" },
+  "marit":       { ru: "помощь", pos: "NOUN", gender: "f", verbImpf: "помогать", verbPerf: "помочь" },
+  "l'upi":       { ru: "сожаление", pos: "NOUN", gender: "n", verbImpf: "сожалеть" },
+  "kirrupi":     { ru: "поступок", pos: "NOUN", cases: { nom: "поступок", acc: "поступок", gen: "поступка", pl: "поступки" } },
+  "firətt":      { ru: "вечность", pos: "NOUN", gender: "f", adjRu: "вечно", adjAttrRu: "вечный" },
+  "galəri":      { ru: "галерея", pos: "NOUN", gender: "f" },
+  "film":        { ru: "фильм", pos: "NOUN" },
+  "fimpa":       { ru: "форма", pos: "NOUN", gender: "f" },
+  "omor":        { ru: "пустота", pos: "NOUN", gender: "f", adjRu: "пустой" },
+  "vil'vita":    { ru: "судьба", pos: "NOUN", gender: "f" },
+  "štouht":      { ru: "снег", pos: "NOUN", adjRu: "снежный", cases: { nom: "снег", acc: "снег", gen: "снега", prep: "снегу", inst: "снегом", pl: "снега" } },
+  "lö":          { ru: "снег", pos: "NOUN", dimRu: "снежок", adjRu: "снежный" },
+  "viffir":      { ru: "ветер", pos: "NOUN", cases: { nom: "ветер", acc: "ветер", gen: "ветра", inst: "ветром", pl: "ветры" } },
+  "štouffir":    { ru: "метель", pos: "NOUN", gender: "f" },
+  "virita":      { ru: "пизда", pos: "NOUN", gender: "f" },
+  "n'ot":        { ru: "близость", pos: "ROOT", adjRu: "близко", adjAttrRu: "близкий" },
+  "berg":        { ru: "поле", pos: "NOUN", gender: "n", cases: { nom: "поле", acc: "поле", gen: "поля", prep: "поле", pl: "поля" } },
+  "nsar":        { ru: "конь", pos: "NOUN", animate: true, cases: { nom: "конь", acc: "коня", gen: "коня", inst: "конём", pl: "кони" } },
+  "auriken":     { ru: "король", pos: "NOUN", animate: true, cases: { nom: "король", acc: "короля", gen: "короля", inst: "королём", pl: "короли" } },
+  "faulo":       { ru: "падение", pos: "NOUN", gender: "n", verbImpf: "падать", verbPerf: "упасть" },
+  "sakkur":      { ru: "дурак", pos: "NOUN", animate: true },
+  "cigara":      { ru: "сигарета", pos: "NOUN", gender: "f" },
+  "nəzt":        { ru: "мусор", pos: "NOUN" },
+  "vellua":      { ru: "берёза", pos: "NOUN", gender: "f" },
+  "kodon":       { ru: "зло", pos: "NOUN", gender: "n", adjRu: "злой" },
+  "apuraita":    { ru: "экзамен", pos: "NOUN" },
+  "krət":        { ru: "текст", pos: "NOUN" },
+  "nok":         { ru: "цифра", pos: "NOUN", gender: "f" },
+  "sikvit":      { ru: "комар", pos: "NOUN", animate: true },
+  "vivn":        { ru: "запах", pos: "NOUN", verbImpf: "пахнуть" },
+  "canara":      { ru: "трава", pos: "NOUN", gender: "f" },
+  "zirvin":      { ru: "задание", pos: "NOUN", gender: "n" },
+  "pkima":       { ru: "игра", pos: "NOUN", gender: "f", verbImpf: "играть", verbPerf: "сыграть" },
+  "gakur":       { ru: "крутость", pos: "ROOT", adjRu: "крутой" },
+  "hibric":      { ru: "дыня", pos: "NOUN", gender: "f" },
+  "plever":      { ru: "благо", pos: "ROOT", adjRu: "хороший", compRu: "лучше", supRu: "лучший" },
+  "əsiəs":       { ru: "дом", pos: "NOUN", dimRu: "домик", cases: { nom: "дом", acc: "дом", gen: "дома", prep: "доме", inst: "домом", pl: "дома" } },
+  "uvi":         { ru: "два", pos: "NUM", ordRu: "второй" },
+  "ilém":        { ru: "лицо", pos: "NOUN", gender: "n", dimRu: "личико" },
+  "cffur":       { ru: "мороз", pos: "ROOT", adjRu: "морозно" },
+  "zortor":      { ru: "носорог", pos: "NOUN", animate: true },
+  "ünir":        { ru: "щит", pos: "NOUN" },
+  "korl":        { ru: "истина", pos: "ROOT", adjRu: "действительно", adjAttrRu: "настоящий" },
+  "jogěnt":      { ru: "зло", pos: "ROOT", adjRu: "плохо", compRu: "хуже", supRu: "худший" },
+  "lik":         { ru: "как", pos: "ROOT", adjRu: "так" },
+  "děablo":      { ru: "дьявол", pos: "NOUN", animate: true },
 
-  // Служебные части речи
-  "vrə":    { ru: "где", pos: "ADV" },
-  "šər":    { ru: "там", pos: "ADV" },
-  "vik":    { ru: "почему", pos: "ADV" },
-  "əlano":  { ru: "снова", pos: "ADV" },
-  "mig":    { ru: "сейчас", pos: "ADV" },
-  "gakuro": { ru: "круто", pos: "ADV" },
-  "rücco":  { ru: "много", pos: "ADV" },
-  "fir":    { ru: "для", pos: "PREP", governs: "gen" },
-  "pěo":    { ru: "на", pos: "PREP", governs: "prep" },
-  "ət":     { ru: "об", pos: "PREP", governs: "prep" },
-  "min":    { ru: "с", pos: "PREP", governs: "inst" },
-  "aě":     { ru: "и", pos: "CONJ" },
-  "či":     { ru: "что", pos: "CONJ" },
-  "bi":     { ru: "но", pos: "CONJ" },
-  "ənol'":  { ru: "поэтому", pos: "CONJ" },
-  "oi":     { ru: "ох", pos: "INTJ" },
-  "oh":     { ru: "ох", pos: "INTJ" },
-  "ěos":    { ru: "да", pos: "PART" },
-  "nə":     { ru: "не", pos: "NEG" },
-  "měr":    { ru: "более", pos: "DEG_COMP" },
-  "gor":    { ru: "самый", pos: "DEG_SUP" },
-  "əho":    { ru: "было", pos: "TENSE_PAST" },
-  "fuoi":   { ru: "будет", pos: "TENSE_FUT" }
+  // --- НЕПЕРЕВОДИМЫЕ КУЛЬТУРНЫЕ ПОНЯТИЯ DISAPĚNTO ---
+  "sokiroma":    { ru: "сокирома", pos: "CULTURAL", note: "Непереводимое: тусовка, обязательно содержащая алкоголь" },
+  "daət":        { ru: "даэт", pos: "CULTURAL", note: "Непереводимое: любовь, причиняющая боль" },
+  "šifərəllo":   { ru: "шифэрэлло", pos: "CULTURAL", note: "Непереводимое: состояние принятия трагичного события" },
+  "onikun":      { ru: "оникун", pos: "CULTURAL", note: "Непереводимое: страх перед результатами чего-то" },
+  "maě'ton":     { ru: "маэ'тон", pos: "CULTURAL", note: "Непереводимое: грусть из-за сорвавшихся планов" },
+  "okimi":       { ru: "окими", pos: "CULTURAL", note: "Непереводимое: эффект слипания глаз из-за желания спать" },
+  "immidəliěa":  { ru: "иммиделия", pos: "CULTURAL", gender: "f", cases: { nom: "иммиделия", acc: "иммиделию", prep: "иммиделии" }, note: "Непереводимое понятие в Disapěnto" },
+
+  // --- СЛУЖЕБНЫЕ ЧАСТИ РЕЧИ, НАРЕЧИЯ, ПРЕДЛОГИ И СОЮЗЫ ---
+  "rit":      { ru: "здесь", pos: "ADV" },
+  "vrə":      { ru: "где", pos: "ADV" },
+  "bovrə":    { ru: "где-то", pos: "ADV" },
+  "šər":      { ru: "там", pos: "ADV" },
+  "vaěo":     { ru: "когда", pos: "ADV" },
+  "bovaěo":   { ru: "когда-то", pos: "ADV" },
+  "nevaěo":   { ru: "никогда", pos: "ADV", isNegAdv: true },
+  "mizər":    { ru: "тогда", pos: "ADV" },
+  "taěo":     { ru: "всегда", pos: "ADV" },
+  "rěm":      { ru: "потому", pos: "ADV" },
+  "ənol'":    { ru: "поэтому", pos: "CONJ" },
+  "vik":      { ru: "почему", pos: "ADV" },
+  "əlano":    { ru: "снова", pos: "ADV" },
+  "ələěn":    { ru: "снова", pos: "ADV" },
+  "mig":      { ru: "сейчас", pos: "ADV", adjRu: "настоящее" },
+  "mičə":     { ru: "очень", pos: "ADV" },
+  "rücco":    { ru: "много", pos: "ADV" },
+  "kimo":     { ru: "иногда", pos: "ADV", note: "иногда / мало" },
+  "bo":       { ru: "несколько", pos: "ADV" },
+  "miš":      { ru: "просто", pos: "PART", adjRu: "простой" },
+  "miritoko": { ru: "по-прежнему", pos: "ADV" },
+  "ěši":      { ru: "конечно", pos: "PART" },
+  "mitrə":    { ru: "давай", pos: "PART" },
+  "təl'":     { ru: "пусть", pos: "PART" },
+  "noro":     { ru: "даже", pos: "PART" },
+  "kito":     { ru: "только", pos: "PART" },
+  "k'uəě":    { ru: "теперь", pos: "ADV" },
+  "vodətto":  { ru: "наверное", pos: "ADV" },
+  "čiro":     { ru: "что ж", pos: "PART" },
+  "doš":      { ru: "ладно", pos: "PART" },
+  "pal'vo":   { ru: "пожалуйста", pos: "PART" },
+  "spanke":   { ru: "спасибо", pos: "INTJ" },
+  "heopəs":   { ru: "привет", pos: "INTJ" },
+  "heo":   { ru: "привет", pos: "INTJ" },
+  "hǝěo":   { ru: "привет", pos: "INTJ" },
+  "ěos":   { ru: "да", pos: "INTJ" },
+  "nǝě":   { ru: "нет", pos: "INTJ" },
+  "daěširu":  { ru: "пока", pos: "INTJ" },
+  "nəzgěnto": { ru: "пиздец", pos: "INTJ" },
+  "oi":       { ru: "ох", pos: "INTJ" },
+  "oh":       { ru: "ох", pos: "INTJ" },
+  "ěos":      { ru: "да", pos: "PART" },
+  "ěrə":      { ru: "может", pos: "PART" },
+  "sikiri":   { ru: "было бы", pos: "PART" },
+
+  // Предлоги с падежным управлением
+  "ih":    { ru: "в", pos: "PREP", governs: "prep" },
+  "vo":    { ru: "в", pos: "PREP", governs: "prep", note: "предлог локации (at)" },
+  "pěo":   { ru: "на", pos: "PREP", governs: "prep" },
+  "ət":    { ru: "об", pos: "PREP", governs: "prep" },
+  "hoə":   { ru: "над", pos: "PREP", governs: "inst" },
+  "baoě":  { ru: "под", pos: "PREP", governs: "inst" },
+  "min":   { ru: "с", pos: "PREP", governs: "inst" },
+  "fvi":   { ru: "с помощью", pos: "PREP", governs: "gen" },
+  "ou":    { ru: "из-за", pos: "PREP", governs: "gen" },
+  "ton":   { ru: "от", pos: "PREP", governs: "gen" },
+  "an":    { ru: "из", pos: "PREP", governs: "gen", note: "предлог принадлежности (of)" },
+  "minnə": { ru: "без", pos: "PREP", governs: "gen" },
+  "prə":   { ru: "до", pos: "PREP", governs: "gen" },
+  "afər":  { ru: "после", pos: "PREP", governs: "gen" },
+  "fir":   { ru: "для", pos: "PREP", governs: "gen" },
+  "mon":   { ru: "к", pos: "PREP", governs: "dat" },
+
+  // Союзы и грамматические маркеры
+  "aě":   { ru: "и", pos: "CONJ" },
+  "ir":   { ru: "или", pos: "CONJ" },
+  "či":   { ru: "что", pos: "CONJ" },
+  "bi":   { ru: "но", pos: "CONJ" },
+  "bit":  { ru: "чем", pos: "CONJ" },
+  "hori": { ru: "если", pos: "CONJ" },
+  "əns":  { ru: "иначе", pos: "CONJ" },
+  "ali":  { ru: "пока", pos: "CONJ" },
+  "nə":   { ru: "не", pos: "NEG" },
+  "měr":  { ru: "более", pos: "DEG_COMP" },
+  "gor":  { ru: "самый", pos: "DEG_SUP" },
+  "əho":  { ru: "было", pos: "TENSE_PAST" },
+  "fuoi": { ru: "будет", pos: "TENSE_FUT" }
 };
 
+// Непроизводные готовые слова и исключения
 const EXCEPTIONS = {
-  "əhto":     { root: "əh", suffix: "-to", ru: "этой", type: "ADJ_DEM", cases: { nom_m: "этот", nom_f: "эта", acc_m: "этого", acc_f: "эту", gen: "этого", prep: "этой", inst: "этой" }, note: "Исключение (əho — прош. время)" },
-  "otəo":     { root: "oto", suffix: "-o", ru: "полный", type: "ADJ", note: "Полнота / весь (с обложки учебника)" },
-  "vimukaši": { root: "vimik", suffix: "-aši", ru: "магазинчик", type: "NOUN", note: "Уменьш.-ласк. с чередованием i→u (Правило 19)" },
-  "əsiesə":   { root: "əsiəs", suffix: "", ru: "дом", type: "NOUN", note: "Вариант написания əsiəs" },
-  "siesori":  { root: "əsiəs", suffix: "-ori", ru: "дома", type: "NOUN_PL", note: "Мн. число от «дом» (Правило 3)" },
-  "likko":    { root: "lik", suffix: "-ko", ru: "так", type: "ADJ", note: "Единственное удвоение согласной (lik → likko)" },
-  "komika":   { root: "koěmato + ěmika", suffix: "стяжение", ru: "блядь", type: "COMP", note: "Композит: секс + дело" }
+  "əhto":       { root: "əh", suffix: "-to", ru: "этой", type: "ADJ_DEM", cases: { nom_m: "этот", nom_f: "эта", acc_m: "этого", acc_f: "эту", gen: "этого", prep: "этой", inst: "этой" }, note: "Исключение (əho — прош. время)" },
+  "otəo":       { root: "oto", suffix: "-o", ru: "всегда", type: "ADV", note: "всегда / полный" },
+  "funciori":   { root: "funci", suffix: "-ori", ru: "деньги", type: "NOUN_PL", note: "Мн. число (деньги)" },
+  "vəscimori":  { root: "vəscim", suffix: "-ori", ru: "настройки", type: "NOUN_PL", note: "Мн. число (настройки)" },
+  "ənfiət":     { root: "fiət", suffix: "ən-", ru: "депрессия", type: "NOUN", note: "Приставка ən- + fiət (депрессия / безнадёга)" },
+  "ənkimieman": { root: "kimiem", suffix: "ən- + -an", ru: "неудачник", type: "NOUN", note: "ən- (не) + kimiem (удача) + -an (деятель)" },
+  "ənkantino":  { root: "kantin", suffix: "ən- + -o", ru: "редко", type: "ADV", note: "ən- (не) + kantino (часто)" },
+  "əlimo":      { root: "əlim", suffix: "-o", ru: "группа", type: "NOUN", note: "группа" },
+  "migo":       { root: "mig", suffix: "-o", ru: "настоящее", type: "NOUN", note: "настоящее (время)" },
+  "fuoiro":     { root: "fuoi", suffix: "-ro", ru: "будущее", type: "NOUN", note: "будущее (время)" },
+  "digirəmo":   { root: "digi", suffix: "-rəm-o", ru: "заброшенный", type: "ADJ", note: "прич. от digirə (кинуть)" },
+  "vimukaši":   { root: "vimik", suffix: "-aši", ru: "магазинчик", type: "NOUN", note: "Уменьш.-ласк. (Правило 19)" },
+  "əsiesə":     { root: "əsiəs", suffix: "", ru: "дом", type: "NOUN", note: "Вариант написания əsiəs" },
+  "siesori":    { root: "əsiəs", suffix: "-ori", ru: "дома", type: "NOUN_PL", note: "Мн. число от «дом» (Правило 3)" },
+  "likko":      { root: "lik", suffix: "-ko", ru: "так", type: "ADJ", note: "Удвоение согласной (lik → likko)" },
+  "komika":     { root: "koěmato + ěmika", suffix: "стяжение", ru: "блядь", type: "COMP", note: "Композит: koěma (секс) + ěmika (дело)" }
 };
 
 /**
  * ============================================================================
- * 2. ФОНЕТИЧЕСКИЙ ТРАНСКРИПТОР DISAPĚNTO
+ * 2. АВТО-СКЛОНЕНИЕ И АВТО-СПРЯЖЕНИЕ РУССКИХ СЛОВ + ПОСТРОЕНИЕ ИНДЕКСА
+ * ============================================================================
+ */
+function autoDeclineRussianNoun(nom, gender = "m", animate = false) {
+  const lower = nom.toLowerCase();
+  if (lower.endsWith("ия")) {
+    const s = lower.slice(0, -2);
+    return { nom: lower, acc: s + "ию", gen: s + "ии", dat: s + "ии", prep: s + "ии", inst: s + "ией", pl: s + "ии" };
+  }
+  if (lower.endsWith("а")) {
+    const s = lower.slice(0, -1);
+    const plEnd = /[гкхжшщч]$/.test(s) ? "и" : "ы";
+    return { nom: lower, acc: s + "у", gen: s + plEnd, dat: s + "е", prep: s + "е", inst: s + "ой", pl: s + plEnd };
+  }
+  if (lower.endsWith("я")) {
+    const s = lower.slice(0, -1);
+    return { nom: lower, acc: s + "ю", gen: s + "и", dat: s + "е", prep: s + "е", inst: s + "ей", pl: s + "и" };
+  }
+  if (lower.endsWith("о")) {
+    const s = lower.slice(0, -1);
+    return { nom: lower, acc: lower, gen: s + "а", dat: s + "у", prep: s + "е", inst: s + "ом", pl: s + "а" };
+  }
+  if (lower.endsWith("е") || lower.endsWith("ье")) {
+    const s = lower.slice(0, -1);
+    return { nom: lower, acc: lower, gen: s + "я", dat: s + "ю", prep: lower, inst: s + "ем", pl: s + "я" };
+  }
+  if (lower.endsWith("ь")) {
+    const s = lower.slice(0, -1);
+    if (gender === "f") {
+      return { nom: lower, acc: lower, gen: s + "и", dat: s + "и", prep: s + "и", inst: lower + "ю", pl: s + "и" };
+    }
+    return { nom: lower, acc: animate ? s + "я" : lower, gen: s + "я", dat: s + "ю", prep: s + "е", inst: s + "ем", pl: s + "и" };
+  }
+  // Мужской род на согласную
+  const plEnd = /[гкхжшщч]$/.test(lower) ? "и" : "ы";
+  return {
+    nom: lower,
+    acc: animate ? lower + "а" : lower,
+    gen: lower + "а",
+    dat: lower + "у",
+    prep: lower + "е",
+    inst: lower + "ом",
+    pl: lower + plEnd
+  };
+}
+
+function autoConjugateVerbFromInf(inf) {
+  if (!inf) return null;
+  const lower = inf.toLowerCase();
+  if (lower.endsWith("ать") || lower.endsWith("ять")) {
+    const s = lower.slice(0, -2);
+    return {
+      pres: { 1: s + "ю", 2: s + "ешь", 3: s + "ет", 11: s + "ем", 12: s + "ете", 13: s + "ют" },
+      past: { m: s + "л", f: s + "ла", n: s + "ло", pl: s + "ли" },
+      imp: s + "й"
+    };
+  }
+  if (lower.endsWith("ить") || lower.endsWith("еть")) {
+    const s = lower.slice(0, -3);
+    const v1 = /[жшщч]$/.test(s) ? "у" : "ю";
+    const v3 = /[жшщч]$/.test(s) ? "ат" : "ят";
+    return {
+      pres: { 1: s + v1, 2: s + "ишь", 3: s + "ит", 11: s + "им", 12: s + "ите", 13: s + v3 },
+      past: { m: lower.slice(0, -2) + "л", f: lower.slice(0, -2) + "ла", n: lower.slice(0, -2) + "ло", pl: lower.slice(0, -2) + "ли" },
+      imp: s + "и"
+    };
+  }
+  if (lower.endsWith("уть")) {
+    const s = lower.slice(0, -3);
+    return {
+      pres: { 1: s + "у", 2: s + "ёшь", 3: s + "ёт", 11: s + "ём", 12: s + "ёте", 13: s + "ут" },
+      past: { m: s + "ул", f: s + "ула", n: s + "уло", pl: s + "ули" },
+      imp: s + "и"
+    };
+  }
+  return null;
+}
+
+const RU_LOOKUP = {};
+
+function buildRussianIndex() {
+  Object.entries(ROOTS).forEach(([conRoot, data]) => {
+    // 1. Автозаполнение падежей для существительных
+    if (data.pos === "NOUN" && !data.cases) {
+      data.cases = autoDeclineRussianNoun(data.ru, data.gender || (data.ru.endsWith("а") || data.ru.endsWith("я") ? "f" : "m"), data.animate);
+    }
+
+    // 2. Автозаполнение форм глаголов
+    if ((data.verbImpf || data.verbPerf) && !data.verbForms) {
+      const impf = autoConjugateVerbFromInf(data.verbImpf);
+      const perf = autoConjugateVerbFromInf(data.verbPerf);
+      data.verbForms = {};
+      if (impf) {
+        data.verbForms.pres = impf.pres;
+        data.verbForms.pastImpf = impf.past;
+        data.verbForms.imp = impf.imp;
+      }
+      if (perf) {
+        data.verbForms.pastPerf = perf.past;
+        data.verbForms.futPerf = perf.pres;
+      }
+    }
+
+    // 3. Индексация базового слова
+    RU_LOOKUP[data.ru.toLowerCase()] = { root: conRoot, pos: data.pos };
+
+    // 4. Индексация падежей
+    if (data.cases) {
+      Object.entries(data.cases).forEach(([caseKey, form]) => {
+        const lowerForm = form.toLowerCase();
+        if (caseKey === "pl" && form !== data.cases.gen) {
+          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "NOUN", plural: true };
+        } else if (caseKey === "poss") {
+          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "PRON", pronMod: "poss" };
+        } else if (data.pos === "PRON" && (caseKey === "acc" || caseKey === "gen" || caseKey === "dat")) {
+          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "PRON", pronMod: "ref" };
+        } else if (!RU_LOOKUP[lowerForm]) {
+          RU_LOOKUP[lowerForm] = { root: conRoot, pos: data.pos };
+        }
+      });
+    }
+
+    // 5. Индексация прилагательных и родовых окончаний (-ый/-ая/-ое/-ые)
+    const registerAdjForms = (adjStr) => {
+      const low = adjStr.toLowerCase();
+      RU_LOOKUP[low] = { root: conRoot, pos: "ADJ" };
+      if (low.endsWith("ый") || low.endsWith("ой") || low.endsWith("ий")) {
+        const stem = low.slice(0, -2);
+        const soft = low.endsWith("ий") && !/[гкхжшщч]$/.test(stem);
+        RU_LOOKUP[stem + (soft ? "яя" : "ая")] = { root: conRoot, pos: "ADJ" };
+        RU_LOOKUP[stem + (soft ? "ее" : "ое")] = { root: conRoot, pos: "ADJ" };
+        RU_LOOKUP[stem + (soft || /[гкхжшщч]$/.test(stem) ? "ие" : "ые")] = { root: conRoot, pos: "ADJ" };
+        if (!RU_LOOKUP[stem + "о"]) RU_LOOKUP[stem + "о"] = { root: conRoot, pos: "ADJ" };
+      }
+    };
+
+    if (data.adjRu) registerAdjForms(data.adjRu);
+    if (data.adjAttrRu) registerAdjForms(data.adjAttrRu);
+    if (data.compRu) RU_LOOKUP[data.compRu.toLowerCase()] = { root: conRoot, pos: "ADJ_COMP" };
+    if (data.supRu) RU_LOOKUP[data.supRu.toLowerCase()] = { root: conRoot, pos: "ADJ_SUP" };
+    if (data.verbalNounRu) RU_LOOKUP[data.verbalNounRu.toLowerCase()] = { root: conRoot, pos: "VNOUN" };
+    if (data.verbalAdjRu) RU_LOOKUP[data.verbalAdjRu.toLowerCase()] = { root: conRoot, pos: "VADJ" };
+    if (data.agentRu) RU_LOOKUP[data.agentRu.toLowerCase()] = { root: conRoot, pos: "AGENT" };
+    if (data.dimRu) RU_LOOKUP[data.dimRu.toLowerCase()] = { root: conRoot, pos: "DIM" };
+    if (data.negNounRu) RU_LOOKUP[data.negNounRu.toLowerCase()] = { root: conRoot, pos: "NEG_PREFIX" };
+    if (data.ordRu) RU_LOOKUP[data.ordRu.toLowerCase()] = { root: conRoot, pos: "ORD" };
+
+    // 6. Индексация глаголов (НСВ vs СВ)
+    if (data.verbImpf) {
+      RU_LOOKUP[data.verbImpf.toLowerCase()] = { root: conRoot, pos: "VERB", tense: "pres", perf: false, isInf: true };
+    }
+    if (data.verbPerf) {
+      RU_LOOKUP[data.verbPerf.toLowerCase()] = { root: conRoot, pos: "VERB", tense: "pres", perf: true, isInf: true };
+    }
+    if (data.verbForms) {
+      const vf = data.verbForms;
+      Object.values(vf.pres || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "pres", perf: false });
+      Object.values(vf.pastImpf || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "past", perf: false });
+      Object.values(vf.pastPerf || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "past", perf: true });
+      Object.values(vf.futImpf || {}).forEach(f => {
+        if (!f.includes(" ")) RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "fut", perf: false };
+      });
+      Object.values(vf.futPerf || {}).forEach(f => {
+        if (!f.includes(" ")) RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "fut", perf: true };
+      });
+      if (vf.imp) RU_LOOKUP[vf.imp] = { root: conRoot, pos: "VERB", tense: "pres", perf: false };
+    }
+  });
+
+  // Исключения и синонимы
+  Object.entries(EXCEPTIONS).forEach(([disWord, exc]) => {
+    RU_LOOKUP[exc.ru.toLowerCase()] = { root: disWord, pos: "EXCEPTION_DIRECT" };
+  });
+
+  Object.assign(RU_LOOKUP, {
+    "идти":       { root: "daka", pos: "VERB", tense: "pres", perf: false, isInf: true },
+    "было":       { root: "əho", pos: "TENSE_PAST" },
+    "будет":      { root: "fuoi", pos: "TENSE_FUT" },
+    "себя":       { root: "le", pos: "PRON", pronMod: "ref" },
+    "этой":       { root: "əh", pos: "ADJ" },
+    "этот":       { root: "əh", pos: "ADJ" },
+    "эта":        { root: "əh", pos: "ADJ" },
+    "этого":      { root: "əh", pos: "PRON_DEM" },
+    "этом":       { root: "əh", pos: "PRON_DEM" },
+    "правда":     { root: "korl", pos: "ADJ" },
+    "хорошо":     { root: "plever", pos: "ADJ" },
+    "плохой":     { root: "jogěnt", pos: "ADJ" },
+    "полный":     { root: "otəo", pos: "EXCEPTION_DIRECT" },
+    "полное":     { root: "otəo", pos: "EXCEPTION_DIRECT" },
+    "безнадёга":  { root: "fiət", pos: "NEG_PREFIX" },
+    "депрессия":  { root: "fiət", pos: "NEG_PREFIX" },
+    "неудачник":  { root: "ənkimieman", pos: "EXCEPTION_DIRECT" },
+    "мало":       { root: "kimo", pos: "ADV" },
+    "иногда":     { root: "kimo", pos: "ADV" },
+    "хуй":        { root: "šotti", pos: "NOUN" },
+    "хер":        { root: "šotti", pos: "NOUN" },
+    "портия":     { root: "antarda", pos: "NOUN" },
+    "партия":     { root: "antarda", pos: "NOUN" },
+    "о":          { root: "ət", pos: "PREP" },
+    "во":         { root: "ih", pos: "PREP" },
+    "из":         { root: "ou", pos: "PREP" }
+  });
+
+  document.getElementById("dict-counter").textContent = `Virkinori v3.0 • База: ${Object.keys(ROOTS).length} корней`;
+}
+buildRussianIndex();
+
+/**
+ * ============================================================================
+ * 3. ФОНЕТИЧЕСКИЙ ТРАНСКРИПТОР DISAPĚNTO
  * ============================================================================
  */
 function transcribeWordToRu(word) {
@@ -811,83 +1638,7 @@ function transcribeSentence(text) {
 
 /**
  * ============================================================================
- * 3. ИНДЕКСАЦИЯ РУССКИХ СЛОВОФОРМ (Для перевода Русский -> Disapěnto)
- * ============================================================================
- */
-const RU_LOOKUP = {};
-
-function buildRussianIndex() {
-  Object.entries(ROOTS).forEach(([conRoot, data]) => {
-    RU_LOOKUP[data.ru.toLowerCase()] = { root: conRoot, pos: data.pos };
-
-    if (data.cases) {
-      Object.entries(data.cases).forEach(([caseKey, form]) => {
-        const lowerForm = form.toLowerCase();
-        if (caseKey === "pl" && form !== data.cases.gen) {
-          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "NOUN", plural: true };
-        } else if (caseKey === "poss") {
-          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "PRON", pronMod: "poss" };
-        } else if (data.pos === "PRON" && (caseKey === "acc" || caseKey === "gen" || caseKey === "dat")) {
-          RU_LOOKUP[lowerForm] = { root: conRoot, pos: "PRON", pronMod: "ref" };
-        } else if (!RU_LOOKUP[lowerForm]) {
-          RU_LOOKUP[lowerForm] = { root: conRoot, pos: data.pos };
-        }
-      });
-    }
-
-    if (data.adjRu) RU_LOOKUP[data.adjRu.toLowerCase()] = { root: conRoot, pos: "ADJ" };
-    if (data.adjAttrRu) RU_LOOKUP[data.adjAttrRu.toLowerCase()] = { root: conRoot, pos: "ADJ" };
-    if (data.compRu) RU_LOOKUP[data.compRu.toLowerCase()] = { root: conRoot, pos: "ADJ_COMP" };
-    if (data.supRu) RU_LOOKUP[data.supRu.toLowerCase()] = { root: conRoot, pos: "ADJ_SUP" };
-    if (data.verbalNounRu) RU_LOOKUP[data.verbalNounRu.toLowerCase()] = { root: conRoot, pos: "VNOUN" };
-    if (data.verbalAdjRu) RU_LOOKUP[data.verbalAdjRu.toLowerCase()] = { root: conRoot, pos: "VADJ" };
-    if (data.agentRu) RU_LOOKUP[data.agentRu.toLowerCase()] = { root: conRoot, pos: "AGENT" };
-    if (data.dimRu) RU_LOOKUP[data.dimRu.toLowerCase()] = { root: conRoot, pos: "DIM" };
-    if (data.negNounRu) RU_LOOKUP[data.negNounRu.toLowerCase()] = { root: conRoot, pos: "NEG_PREFIX" };
-    if (data.ordRu) RU_LOOKUP[data.ordRu.toLowerCase()] = { root: conRoot, pos: "ORD" };
-
-    if (data.verbImpf) {
-      RU_LOOKUP[data.verbImpf.toLowerCase()] = { root: conRoot, pos: "VERB", tense: "pres", perf: false, isInf: true };
-    }
-    if (data.verbPerf) {
-      RU_LOOKUP[data.verbPerf.toLowerCase()] = { root: conRoot, pos: "VERB", tense: "pres", perf: true, isInf: true };
-    }
-    if (data.verbForms) {
-      const vf = data.verbForms;
-      Object.values(vf.pres || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "pres", perf: false });
-      Object.values(vf.pastImpf || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "past", perf: false });
-      Object.values(vf.pastPerf || {}).forEach(f => RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "past", perf: true });
-      Object.values(vf.futImpf || {}).forEach(f => {
-        if (!f.includes(" ")) RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "fut", perf: false };
-      });
-      Object.values(vf.futPerf || {}).forEach(f => {
-        if (!f.includes(" ")) RU_LOOKUP[f] = { root: conRoot, pos: "VERB", tense: "fut", perf: true };
-      });
-      if (vf.imp) RU_LOOKUP[vf.imp] = { root: conRoot, pos: "VERB", tense: "pres", perf: false };
-    }
-  });
-
-  Object.assign(RU_LOOKUP, {
-    "идти":     { root: "daka", pos: "VERB", tense: "pres", perf: false, isInf: true },
-    "было":     { root: "əho", pos: "TENSE_PAST" },
-    "будет":    { root: "fuoi", pos: "TENSE_FUT" },
-    "себя":     { root: "le", pos: "PRON", pronMod: "ref" },
-    "этой":     { root: "əh", pos: "ADJ" },
-    "этот":     { root: "əh", pos: "ADJ" },
-    "эта":      { root: "əh", pos: "ADJ" },
-    "правда":   { root: "korl", pos: "ADJ" },
-    "хорошо":   { root: "plever", pos: "ADJ" },
-    "плохой":   { root: "jogěnt", pos: "ADJ" },
-    "полное":   { root: "oto", pos: "ADJ" },
-    "собрание": { root: "olik", pos: "NOUN" },
-    "правил":   { root: "virkin", pos: "NOUN", plural: true }
-  });
-}
-buildRussianIndex();
-
-/**
- * ============================================================================
- * 4. УМНЫЙ ПАРСЕР МОРФЕМ С ФОНОТАКТИЧЕСКОЙ ВАЛИДАЦИЕЙ
+ * 4. УМНЫЙ ПАРСЕР МОРФЕМ DISAPĚNTO (С поддержкой перехода -ě -> -rə в глаголах)
  * ============================================================================
  */
 function matchPhonotacticSuffix(word, afterVowelSuffix, afterConsonantSuffix, validator = (s) => Boolean(ROOTS[s])) {
@@ -944,9 +1695,10 @@ function parseDisapentoWord(rawWord) {
     return { raw: normRaw, lower, root: lower, ...entry, morphemes: lower };
   }
 
-  const infMatch = matchPhonotacticSuffix(lower, "kiri", "akiri", (s) => Boolean(ROOTS[s] || ROOTS[s + "a"]));
+  // Вспомогательный глагол в составном сказуемом (-kiri / -akiri, Правило 8)
+  const infMatch = matchPhonotacticSuffix(lower, "kiri", "akiri", (s) => Boolean(ROOTS[s] || ROOTS[s + "a"] || ROOTS[s + "ě"]));
   if (infMatch) {
-    const rootKey = ROOTS[infMatch.stem] ? infMatch.stem : infMatch.stem + "a";
+    const rootKey = ROOTS[infMatch.stem] ? infMatch.stem : (ROOTS[infMatch.stem + "a"] ? infMatch.stem + "a" : infMatch.stem + "ě");
     return {
       raw: normRaw, lower, root: rootKey, pos: "VERB_INF",
       ru: ROOTS[rootKey].verbImpf || ROOTS[rootKey].ru,
@@ -955,6 +1707,18 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Законченный глагол совершенного вида (-rəm / -əm, Правило 22 + переход -ě -> -rəm)
+  if (lower.endsWith("rəm")) {
+    const stem = lower.slice(0, -3);
+    const rootKey = ROOTS[stem] ? stem : (ROOTS[stem + "ě"] ? stem + "ě" : null);
+    if (rootKey && ROOTS[rootKey].pos !== "NUM") {
+      return {
+        raw: normRaw, lower, root: rootKey, pos: "VERB", perf: true,
+        morphemes: rootKey.endsWith("ě") ? `${rootKey} (ě→r) + -ə + -m` : `${rootKey} + -rə + -m`,
+        note: "Законченный глагол сов. вида (Правило 22)"
+      };
+    }
+  }
   const perfVerbMatch = matchPhonotacticSuffix(lower, "rəm", "əm", (s) => Boolean(ROOTS[s] && ROOTS[s].pos !== "NUM"));
   if (perfVerbMatch) {
     const { stem, suffix } = perfVerbMatch;
@@ -965,6 +1729,18 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Обычный глагол несовершенного вида (-rə / -ə, Правило 2 + переход -ě -> -rə, напр. kaě -> karə)
+  if (lower.endsWith("rə")) {
+    const stem = lower.slice(0, -2);
+    const rootKey = ROOTS[stem] ? stem : (ROOTS[stem + "ě"] ? stem + "ě" : null);
+    if (rootKey) {
+      return {
+        raw: normRaw, lower, root: rootKey, pos: "VERB", perf: false,
+        morphemes: rootKey.endsWith("ě") ? `${rootKey} (ě→r) + -ə` : `${rootKey} + -rə`,
+        note: `Глагол от «${ROOTS[rootKey].ru}»`
+      };
+    }
+  }
   const verbMatch = matchPhonotacticSuffix(lower, "rə", "ə");
   if (verbMatch) {
     const { stem, suffix } = verbMatch;
@@ -975,6 +1751,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Множественное число (-ri / -ori, Правило 3)
   const plMatch = matchPhonotacticSuffix(lower, "ri", "ori");
   if (plMatch) {
     const { stem, suffix } = plMatch;
@@ -987,6 +1764,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Уменьшительно-ласкательная форма (-ši / -aši, Правило 19)
   const dimMatch = matchPhonotacticSuffix(lower, "ši", "aši");
   if (dimMatch) {
     const { stem, suffix } = dimMatch;
@@ -999,6 +1777,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Отглагольное прилагательное (-ro / -aro, Правила 6 + 7)
   const vAdjMatch = matchPhonotacticSuffix(lower, "ro", "aro");
   if (vAdjMatch) {
     const { stem, suffix } = vAdjMatch;
@@ -1011,6 +1790,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Прилагательное (-to / -o, Правило 1)
   const adjMatch = matchPhonotacticSuffix(lower, "to", "o");
   if (adjMatch) {
     const { stem, suffix } = adjMatch;
@@ -1023,6 +1803,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Отглагольное существительное (-r / -ar, Правило 6)
   const vNounMatch = matchPhonotacticSuffix(lower, "r", "ar");
   if (vNounMatch) {
     const { stem, suffix } = vNounMatch;
@@ -1035,6 +1816,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Суффикс деятеля -an (Правило 18)
   if (lower.endsWith("an")) {
     const stem = lower.slice(0, -2);
     if (ROOTS[stem]) {
@@ -1048,6 +1830,7 @@ function parseDisapentoWord(rawWord) {
     }
   }
 
+  // Порядковое числительное (-m / -əm, Правило 9)
   const ordMatch = matchPhonotacticSuffix(lower, "m", "əm", (s) => Boolean(ROOTS[s] && ROOTS[s].pos === "NUM"));
   if (ordMatch) {
     const { stem, suffix } = ordMatch;
@@ -1059,6 +1842,7 @@ function parseDisapentoWord(rawWord) {
     };
   }
 
+  // Притяжательные (-a, Правило 10) и отсылочные (-ě, Правило 17) местоимения
   if (lower.endsWith("a") || lower.endsWith("ě")) {
     const suf = lower.slice(-1);
     const stem = lower.slice(0, -1);
@@ -1079,7 +1863,7 @@ function parseDisapentoWord(rawWord) {
 
 /**
  * ============================================================================
- * 5. КОНТЕКСТНЫЙ ПЕРЕВОД DISAPĚNTO -> РУССКИЙ
+ * 5. КОНТЕКСТНЫЙ ПЕРЕВОД DISAPĚNTO -> РУССКИЙ (С точным различением НСВ и СВ)
  * ============================================================================
  */
 function conjugateRussianVerbFull(rootKey, { person = 3, plural = false, tense = "pres", gender = "m", perf = false, imperative = false }) {
@@ -1090,16 +1874,29 @@ function conjugateRussianVerbFull(rootKey, { person = 3, plural = false, tense =
 
   if (imperative && vf.imp) return vf.imp;
 
+  // ПРОШЕДШЕЕ ВРЕМЯ: əho + глагол (НСВ) vs əho + глагол + m (СВ)
   if (tense === "past") {
     const table = perf ? (vf.pastPerf || vf.pastImpf) : (vf.pastImpf || vf.pastPerf);
     if (table) return plural ? table.pl : (table[gender] || table.m);
   }
 
+  // БУДУЩЕЕ ВРЕМЯ:
+  // 1) fuoi + глагол + m (perf = true) -> совершенный вид ("скажу", "приду", "отвечу")
+  // 2) fuoi + глагол без m (perf = false) -> несовершенный вид ("буду говорить", "буду идти")
   if (tense === "fut") {
-    if (perf && vf.futPerf) return vf.futPerf[personKey] || vf.futPerf[3];
-    if (!perf && vf.futImpf) return vf.futImpf[personKey] || vf.futImpf[3];
-    const aux = { 1: "буду", 2: "будешь", 3: "будет", 11: "будем", 12: "будете", 13: "будут" }[personKey] || "будет";
-    return `${aux} ${entry.verbImpf || entry.ru}`;
+    if (perf) {
+      if (vf.futPerf) return vf.futPerf[personKey] || vf.futPerf[3];
+      return entry.verbPerf || entry.verbImpf || entry.ru;
+    } else {
+      if (vf.futImpf) return vf.futImpf[personKey] || vf.futImpf[3];
+      const aux = { 1: "буду", 2: "будешь", 3: "будет", 11: "будем", 12: "будете", 13: "будут" }[personKey] || "будет";
+      return `${aux} ${entry.verbImpf || entry.ru}`;
+    }
+  }
+
+  // Если глагол с суффиксом -m употреблён без маркера времени — переводим совершенным будущим
+  if (perf && vf.futPerf) {
+    return vf.futPerf[personKey] || vf.futPerf[3];
   }
 
   if (vf.pres) {
@@ -1113,7 +1910,7 @@ function hasUpcomingVerb(parsedTokens, startIndex) {
     const t = parsedTokens[j];
     if (t.punct || t.pos === "CONJ") return false;
     if (t.pos === "VERB") return true;
-    if (t.pos === "NEG" || t.pos === "ADV") continue;
+    if (t.pos === "NEG" || t.pos === "ADV" || t.pos === "PART") continue;
     return false;
   }
   return false;
@@ -1143,16 +1940,26 @@ function translateDisapentoToRu(text) {
     const token = parsed[i];
     const nextToken = parsed[i + 1];
 
+    // --- ПЕРЕХВАТ ИДИОМ И УСТОЙЧИВЫХ ВЫРАЖЕНИЙ ---
     if (token.lower === "plevero" && nextToken && nextToken.lower === "kimiem") {
       outputWords.push(applyCase("удачи", token.isUpper));
-      glosses.push({
-        word: `${token.raw} ${nextToken.raw}`,
-        tag: "IDIOM",
-        formula: "plever-o + kimiem",
-        note: "Идиома «Удачи!» (букв. «хорошей удачи / good luck»)"
-      });
-      i++;
-      continue;
+      glosses.push({ word: `${token.raw} ${nextToken.raw}`, tag: "IDIOM", formula: "plever-o + kimiem", note: "Идиома «Удачи!» (good luck)" });
+      i++; continue;
+    }
+    if (token.lower === "prə" && nextToken && nextToken.lower === "rakeě") {
+      outputWords.push(applyCase("вчера", token.isUpper));
+      glosses.push({ word: `${token.raw} ${nextToken.raw}`, tag: "IDIOM", formula: "prə + rakeě", note: "до сегодня = «вчера»" });
+      i++; continue;
+    }
+    if ((token.lower === "afər" || token.lower === "afəer") && nextToken && nextToken.lower === "rakeě") {
+      outputWords.push(applyCase("завтра", token.isUpper));
+      glosses.push({ word: `${token.raw} ${nextToken.raw}`, tag: "IDIOM", formula: "afər + rakeě", note: "после сегодня = «завтра»" });
+      i++; continue;
+    }
+    if ((token.lower === "nuol'ato" || token.lower === "nuoläto") && nextToken && nextToken.lower === "namiri") {
+      outputWords.push(applyCase("ватные ноги", token.isUpper));
+      glosses.push({ word: `${token.raw} ${nextToken.raw}`, tag: "IDIOM", formula: "nuol'a-to + nami-ri", note: "Идиома «ватные ноги» (букв. облачные ноги)" });
+      i++; continue;
     }
 
     if (token.punct) {
@@ -1217,7 +2024,7 @@ function translateDisapentoToRu(text) {
     if (token.pos === "PREP") {
       activePrepCase = token.governs;
       outputWords.push(applyCase(token.ru, token.isUpper));
-      glosses.push({ word: token.raw, tag: "PREP", formula: token.raw, note: `предлог «${token.ru}»` });
+      glosses.push({ word: token.raw, tag: "PREP", formula: token.raw, note: token.note || `предлог «${token.ru}»` });
       continue;
     }
 
@@ -1270,14 +2077,18 @@ function translateDisapentoToRu(text) {
         person, plural, tense: pendingTense, gender, perf: !!token.perf, imperative: isImperative
       });
 
-      if (currentSubject && currentSubject.isNegative) {
+      const prevTok = parsed[i - 1];
+      const prevPrevTok = parsed[i - 2];
+      const alreadyHasExplicitNeg = (prevTok && prevTok.pos === "NEG") || (prevPrevTok && prevPrevTok.pos === "NEG");
+
+      if (currentSubject && currentSubject.isNegative && !alreadyHasExplicitNeg) {
         conjugated = "не " + conjugated;
       }
 
       outputWords.push(applyCase(conjugated, token.isUpper));
       glosses.push({
         word: token.raw,
-        tag: token.perf ? "VERB (СОВ)" : "VERB",
+        tag: token.perf ? "VERB (СОВ)" : "VERB (НСВ)",
         formula: token.morphemes,
         note: `${token.note} → «${conjugated}»`
       });
@@ -1308,6 +2119,12 @@ function translateDisapentoToRu(text) {
       continue;
     }
 
+    if (token.pos === "CULTURAL") {
+      outputWords.push(applyCase(token.ru, token.isUpper));
+      glosses.push({ word: token.raw, tag: "CULTURAL", formula: token.raw, note: token.note });
+      continue;
+    }
+
     if (token.pos === "NOUN" || token.pos === "NOUN_PL") {
       let ruForm = token.ru;
       if (token.pos === "NOUN") {
@@ -1321,8 +2138,12 @@ function translateDisapentoToRu(text) {
         } else if (!currentSubject) {
           currentSubject = { person: 3, plural: false, gender: entry?.gender || "m", isNegative: false };
         }
-      } else if (token.pos === "NOUN_PL" && !currentSubject) {
-        currentSubject = { person: 3, plural: true, gender: "m", isNegative: false };
+      } else if (token.pos === "NOUN_PL") {
+        activePrepCase = null;
+        afterTransitiveVerb = false;
+        if (!currentSubject) {
+          currentSubject = { person: 3, plural: true, gender: "m", isNegative: false };
+        }
       }
 
       outputWords.push(applyCase(ruForm, token.isUpper));
@@ -1331,6 +2152,9 @@ function translateDisapentoToRu(text) {
     }
 
     if (token.pos !== "UNKNOWN") {
+      if (token.isNegAdv) {
+        currentSubject = { ...(currentSubject || { person: 3, plural: false, gender: "m" }), isNegative: true };
+      }
       outputWords.push(applyCase(token.ru, token.isUpper));
       glosses.push({ word: token.raw, tag: token.pos, formula: token.morphemes || token.raw, note: token.note || `«${token.ru}»` });
     } else {
@@ -1344,25 +2168,50 @@ function translateDisapentoToRu(text) {
 
 /**
  * ============================================================================
- * 6. ПЕРЕВОД РУССКИЙ -> DISAPĚNTO
+ * 6. ПЕРЕВОД РУССКИЙ -> DISAPĚNTO (С поддержкой НСВ/СВ и идиом)
  * ============================================================================
  */
+function synthesizeDisapentoVerb(rootKey, isPerf) {
+  let word = "";
+  let formula = "";
+  // Правило для основ на -ě (kaě -> karə): ě на конце основы в глаголах превращается в r
+  if (rootKey.endsWith("ě")) {
+    const base = rootKey.slice(0, -1);
+    word = base + "rə" + (isPerf ? "m" : "");
+    formula = `${rootKey} (ě→r) + -ə${isPerf ? " + -m" : ""}`;
+  } else {
+    const vSuf = endsWithDisVowel(rootKey) ? "rə" : "ə";
+    word = rootKey + vSuf + (isPerf ? "m" : "");
+    formula = `${rootKey} + -${vSuf}${isPerf ? " + -m" : ""}`;
+  }
+  return { word, formula };
+}
+
 function translateRuToDisapento(text) {
   let norm = text
     .replace(/\bжелаю\s+удачи\b/gi, (m) => m[0] === m[0].toUpperCase() ? "__IDIOM_LUCK_CAP__" : "__IDIOM_LUCK__")
     .replace(/\bудачи\b/gi, (m) => m[0] === m[0].toUpperCase() ? "__IDIOM_LUCK_CAP__" : "__IDIOM_LUCK__")
+    .replace(/\bватные\s+ноги\b/gi, (m) => m[0] === m[0].toUpperCase() ? "__IDIOM_LEGS_CAP__" : "__IDIOM_LEGS__")
+    .replace(/\bвчера\b/gi, (m) => m[0] === m[0].toUpperCase() ? "__IDIOM_YEST_CAP__" : "__IDIOM_YEST__")
+    .replace(/\bзавтра\b/gi, (m) => m[0] === m[0].toUpperCase() ? "__IDIOM_TOM_CAP__" : "__IDIOM_TOM__")
+    .replace(/\bс\s+помощью\b/gi, "fvi")
+    .replace(/\bиз-за\b/gi, "ou")
+    .replace(/\bпо-прежнему\b/gi, "miritoko")
+    .replace(/\bпо\s+прежнему\b/gi, "miritoko")
+    .replace(/\bчто\s+ж\b/gi, "čiro")
+    .replace(/\bбыло\s+бы\b/gi, "sikiri")
+    .replace(/\bтакой\s+же\b/gi, "silfi")
+    .replace(/\bгородской\s+пейзаж\b/gi, "abskroftənviš")
+    .replace(/\bлюбовь\s+к\s+котам\b/gi, "měěopoli")
     .replace(/\b(буду|будешь|будет|будем|будете|будут)\s+([а-яё]+)/gi, (_, aux, inf) => `__FUT__${inf}`);
 
-  const rawTokens = norm.match(/(__IDIOM_LUCK_CAP__|__IDIOM_LUCK__|__FUT__)?[а-яёa-z0-9'_]+|[^\s\w]/gi) || [];
+  const rawTokens = norm.match(/(__IDIOM_[A-Z_]+__|__FUT__)?[а-яёa-z0-9'_]+|[^\s\w]/gi) || [];
 
   let parsed = rawTokens.map(token => {
-    if (/^[^\wа-яё]+$/i.test(token)) return { punct: token };
+    if (/^[^\wа-яё']+$/i.test(token)) return { punct: token };
 
-    if (token === "__IDIOM_LUCK__" || token === "__IDIOM_LUCK_CAP__") {
-      return {
-        isIdiomLuck: true,
-        isUpper: token === "__IDIOM_LUCK_CAP__"
-      };
+    if (token.startsWith("__IDIOM_")) {
+      return { idiomCode: token };
     }
 
     let forcedFut = false;
@@ -1388,7 +2237,8 @@ function translateRuToDisapento(text) {
     return { original: clean, isUpper, unknown: true };
   });
 
-  if (parsed.some(t => t.pos === "PRON_NEG")) {
+  // Снятие двойного отрицания только если в предложении есть отрицательное местоимение (никто/ничто/никогда)
+  if (parsed.some(t => t.pos === "PRON_NEG" || t.root === "nevaěo")) {
     parsed = parsed.filter(t => t.root !== "nə");
   }
 
@@ -1407,15 +2257,20 @@ function translateRuToDisapento(text) {
       return;
     }
 
-    if (item.isIdiomLuck) {
-      const phrase = item.isUpper ? "Plevero kimiem" : "plevero kimiem";
-      outputWords.push(phrase);
-      glosses.push({
-        word: phrase,
-        tag: "IDIOM",
-        formula: "plever-o + kimiem",
-        note: "Идиома «Удачи!» (good luck)"
-      });
+    if (item.idiomCode) {
+      const map = {
+        "__IDIOM_LUCK__":     { w: "plevero kimiem", f: "plever-o + kimiem", n: "Идиома «Удачи!»" },
+        "__IDIOM_LUCK_CAP__": { w: "Plevero kimiem", f: "plever-o + kimiem", n: "Идиома «Удачи!»" },
+        "__IDIOM_LEGS__":     { w: "nuol'ato namiri", f: "nuol'a-to + nami-ri", n: "Идиома «ватные ноги»" },
+        "__IDIOM_LEGS_CAP__": { w: "Nuol'ato namiri", f: "nuol'a-to + nami-ri", n: "Идиома «ватные ноги»" },
+        "__IDIOM_YEST__":     { w: "prə rakeě", f: "prə + rakeě", n: "«вчера» (до сегодня)" },
+        "__IDIOM_YEST_CAP__": { w: "Prə rakeě", f: "prə + rakeě", n: "«вчера» (до сегодня)" },
+        "__IDIOM_TOM__":      { w: "afər rakeě", f: "afər + rakeě", n: "«завтра» (после сегодня)" },
+        "__IDIOM_TOM_CAP__":  { w: "Afər rakeě", f: "afər + rakeě", n: "«завтра» (после сегодня)" }
+      };
+      const idm = map[item.idiomCode];
+      outputWords.push(idm.w);
+      glosses.push({ word: idm.w, tag: "IDIOM", formula: idm.f, note: idm.n });
       prevWasVerb = false;
       return;
     }
@@ -1423,6 +2278,14 @@ function translateRuToDisapento(text) {
     if (item.unknown) {
       outputWords.push(item.original);
       glosses.push({ word: item.original, tag: "?", formula: "?", note: "нет в словаре" });
+      prevWasVerb = false;
+      return;
+    }
+
+    if (item.pos === "EXCEPTION_DIRECT") {
+      const finalWord = applyCase(item.root, item.isUpper);
+      outputWords.push(finalWord);
+      glosses.push({ word: finalWord, tag: "LEX", formula: item.root, note: `«${item.original}»` });
       prevWasVerb = false;
       return;
     }
@@ -1461,15 +2324,14 @@ function translateRuToDisapento(text) {
         glosses.push({ word: "fuoi", tag: "TENSE", formula: "fuoi", note: "буд. время (Правило 12)" });
       }
 
-      const vSuf = endsWithDisVowel(item.root) ? "rə" : "ə";
-      const perfSuf = item.perf ? "m" : "";
-      const word = item.root + vSuf + perfSuf;
-      outputWords.push(applyCase(word, item.isUpper));
+      const synth = synthesizeDisapentoVerb(item.root, Boolean(item.perf));
+      const finalVerb = applyCase(synth.word, item.isUpper);
+      outputWords.push(finalVerb);
       glosses.push({
-        word,
-        tag: item.perf ? "VERB+M" : "VERB",
-        formula: `${item.root} + -${vSuf}${perfSuf ? " + -m" : ""}`,
-        note: item.perf ? "сов. вид (Правило 22)" : "несов. вид (Правило 2)"
+        word: finalVerb,
+        tag: item.perf ? "VERB+M (СОВ)" : "VERB (НСВ)",
+        formula: synth.formula,
+        note: item.perf ? `сов. вид («${item.original}»)` : `несов. вид («${item.original}»)`
       });
       prevWasVerb = true;
       return;
@@ -1485,6 +2347,8 @@ function translateRuToDisapento(text) {
         word = "əhto"; formula = "əh + -to";
       } else if (item.root === "lik") {
         word = "likko"; formula = "lik + -ko"; note = "удвоение k (likko)";
+      } else if (item.root === "lon'" || item.root === "silfi") {
+        word = item.root;
       } else {
         const suf = endsWithDisVowel(item.root) ? "to" : "o";
         word = item.root + suf; formula = `${item.root} + -${suf}`; note = "прил. (Правило 1)";
@@ -1524,7 +2388,7 @@ function translateRuToDisapento(text) {
 
 /**
  * ============================================================================
- * 7. ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА, КНОПКИ SHIFT И АВТО-ВЫСОТЫ ОКНА
+ * 7. ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА И АВТО-РАСТЯГИВАНИЕ ПОЛЯ
  * ============================================================================
  */
 let direction = "DIS_TO_RU";
@@ -1538,7 +2402,6 @@ const glossContainer = document.getElementById("gloss-container");
 const shiftBtn = document.getElementById("shift-btn");
 const vkKeys = document.querySelectorAll(".vk-key");
 
-// Автоматическое растягивание поля ввода по высоте под длинный текст без скроллбара
 function autoResizeTextarea() {
   sourceInput.style.height = "auto";
   sourceInput.style.height = Math.max(120, sourceInput.scrollHeight) + "px";
